@@ -1,0 +1,35 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+- ../../base
+- ../../namespaces
+
+namespace: app
+
+patches:
+- target:
+    kind: Deployment
+    name: app
+  patch: |-
+    - op: replace
+      path: /spec/replicas
+      value: 2
+    - op: add
+      path: /metadata/labels/environment
+      value: staging
+    - op: replace
+      path: /spec/template/spec/containers/0/resources/requests/memory
+      value: "96Mi"
+    - op: replace
+      path: /spec/template/spec/containers/0/resources/requests/cpu
+      value: "375m"
+    - op: replace
+      path: /spec/template/spec/containers/0/resources/limits/memory
+      value: "192Mi"
+    - op: replace
+      path: /spec/template/spec/containers/0/resources/limits/cpu
+      value: "750m"
+
+commonLabels:
+  environment: staging
