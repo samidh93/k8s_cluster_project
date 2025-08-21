@@ -5,6 +5,7 @@ resources:
 - deployment.yaml
 - service.yaml
 
-commonLabels:
-  app: app
-  version: v1
+labels:
+- pairs:
+    app: app
+    version: v1

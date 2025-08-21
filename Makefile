@@ -24,9 +24,9 @@ deploy-prod:
 
 # Clean up all resources
 clean:
-	kubectl delete -k k8s/overlays/development/ || true
-	kubectl delete -k k8s/overlays/staging/ || true
-	kubectl delete -k k8s/overlays/production/ || true
+	@echo "Cleaning up all environments..."
+	kubectl delete namespace app --ignore-not-found=true || true
+	@echo "Cleanup completed"
 
 # Show cluster status
 status:

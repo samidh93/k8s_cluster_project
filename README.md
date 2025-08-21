@@ -32,12 +32,17 @@ A modern Kubernetes project with best practices for deployment and management.
 # Start local cluster
 minikube start
 
-# Deploy to local cluster
-kubectl apply -f k8s/base/
+# Deploy to local cluster (uses development overlay)
+kubectl apply -k k8s/overlays/development/
 
 # Check status
 kubectl get all
 ```
+
+**Note**: We use `k8s/overlays/development/` instead of `k8s/base/` because:
+- Base contains Kustomization files (not Kubernetes resources)
+- Overlays handle namespace creation and environment-specific configuration
+- This ensures proper resource ordering and environment labeling
 
 ### Production Deployment
 ```bash
@@ -50,7 +55,7 @@ kubectl apply -f k8s/overlays/production/
 ### Adding New Resources
 1. Create manifest in `k8s/base/`
 2. Update Kustomization files
-3. Test locally with `kubectl apply -f k8s/base/`
+3. Test locally with `kubectl apply -k k8s/overlays/development/`
 
 ### Environment Overlays
 - `k8s/overlays/development/` - Development environment

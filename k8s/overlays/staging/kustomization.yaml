@@ -31,5 +31,6 @@ patches:
       path: /spec/template/spec/containers/0/resources/limits/cpu
       value: "750m"
 
-commonLabels:
-  environment: staging
+labels:
+- pairs:
+    environment: staging

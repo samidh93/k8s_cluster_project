@@ -31,5 +31,6 @@ patches:
       path: /spec/template/spec/containers/0/resources/limits/cpu
       value: "1000m"
 
-commonLabels:
-  environment: production
+labels:
+- pairs:
+    environment: production

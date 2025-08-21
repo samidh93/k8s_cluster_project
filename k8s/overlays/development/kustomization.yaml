@@ -19,5 +19,6 @@ patches:
       path: /metadata/labels/environment
       value: development
 
-commonLabels:
-  environment: development
+labels:
+- pairs:
+    environment: development
