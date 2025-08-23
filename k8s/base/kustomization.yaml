@@ -4,6 +4,11 @@ kind: Kustomization
 resources:
 - deployment.yaml
 - service.yaml
+- ingress.yaml
+- storage-class.yaml
+- persistent-volume-claim.yaml
+- configmap.yaml
+- secret.yaml
 
 labels:
 - pairs:

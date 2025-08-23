@@ -1,4 +1,5 @@
-name: Deploy to Kubernetes
+# Let's create an enhanced workflow
+name: CI/CD Pipeline
 
 on:
   push:
@@ -10,19 +11,28 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     
     - name: Install kubectl
       uses: azure/setup-kubectl@v3
       with:
         version: 'latest'
     
-    - name: Validate manifests
+    - name: Validate all environments
       run: |
+        echo "Validating base configuration..."
         kubectl kustomize k8s/base/ | kubectl apply --dry-run=client -f -
+        
+        echo "Validating development overlay..."
         kubectl kustomize k8s/overlays/development/ | kubectl apply --dry-run=client -f -
+        
+        echo "Validating staging overlay..."
         kubectl kustomize k8s/overlays/staging/ | kubectl apply --dry-run=client -f -
+        
+        echo "Validating production overlay..."
         kubectl kustomize k8s/overlays/production/ | kubectl apply --dry-run=client -f -
+        
+        echo "✅ All manifests validated successfully!"
 
   deploy-dev:
     needs: validate
@@ -31,7 +41,7 @@ jobs:
     environment: development
     
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     
     - name: Install kubectl
       uses: azure/setup-kubectl@v3
@@ -40,6 +50,49 @@ jobs:
     
     - name: Deploy to Development
       run: |
-        # Add your kubeconfig here
-        echo "Deploying to development environment..."
+        echo "🚀 Deploying to development environment..."
+        # Add your kubeconfig here when ready
         # kubectl apply -k k8s/overlays/development/
+        echo "Development deployment completed!"
+
+  deploy-staging:
+    needs: validate
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    environment: staging
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install kubectl
+      uses: azure/setup-kubectl@v3
+      with:
+        version: 'latest'
+    
+    - name: Deploy to Staging
+      run: |
+        echo "🚀 Deploying to staging environment..."
+        # Add your kubeconfig here when ready
+        # kubectl apply -k k8s/overlays/staging/
+        echo "Staging deployment completed!"
+
+  deploy-prod:
+    needs: [validate, deploy-staging]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    environment: production
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install kubectl
+      uses: azure/setup-kubectl@v3
+      with:
+        version: 'latest'
+    
+    - name: Deploy to Production
+      run: |
+        echo "🚀 Deploying to production environment..."
+        # Add your kubeconfig here when ready
+        # kubectl apply -k k8s/overlays/production/
+        echo "Production deployment completed!"

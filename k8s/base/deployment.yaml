@@ -29,15 +29,63 @@ spec:
           limits:
             memory: "128Mi"
             cpu: "500m"
+        
+        # Mount persistent storage
+        volumeMounts:
+        - name: app-data
+          mountPath: /usr/share/nginx/html/data
+        - name: app-config
+          mountPath: /etc/nginx/conf.d
+        - name: app-secrets
+          mountPath: /etc/app/secrets
+          readOnly: true
+        
+        # Environment variables from ConfigMap
+        env:
+        - name: APP_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: app.name
+        - name: APP_VERSION
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: app.version
+        - name: DB_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: db.host
+        
+        # Environment variables from Secret
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: db.password
+        
         livenessProbe:
           httpGet:
-            path: /
+            path: /health
             port: 80
           initialDelaySeconds: 30
           periodSeconds: 10
         readinessProbe:
           httpGet:
-            path: /
+            path: /health
             port: 80
           initialDelaySeconds: 5
           periodSeconds: 5
+      
+      # Define volumes
+      volumes:
+      - name: app-data
+        persistentVolumeClaim:
+          claimName: app-data-pvc
+      - name: app-config
+        configMap:
+          name: app-config
+      - name: app-secrets
+        secret:
+          secretName: app-secrets

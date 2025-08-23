@@ -1,0 +1,37 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+  namespace: app
+data:
+  # Application configuration
+  app.name: "My Kubernetes App"
+  app.version: "1.0.0"
+  app.environment: "development"
+  
+  # Database configuration (for future use)
+  db.host: "localhost"
+  db.port: "3306"
+  db.name: "myapp"
+  
+  # Feature flags
+  features.upload.enabled: "true"
+  features.logging.level: "info"
+  features.cache.enabled: "true"
+  
+  # Custom nginx configuration
+  nginx.conf: |
+    server {
+        listen 80;
+        server_name app.local;
+        
+        location / {
+            root /usr/share/nginx/html;
+            index index.html;
+        }
+        
+        location /health {
+            access_log off;
+            return 200 "healthy\n";
+        }
+    }
