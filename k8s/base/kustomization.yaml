@@ -9,6 +9,11 @@ resources:
 - persistent-volume-claim.yaml
 - configmap.yaml
 - secret.yaml
+- monitoring-namespace.yaml
+- prometheus-config.yaml
+- prometheus-deployment.yaml
+- prometheus-service.yaml
+- grafana.yaml
 
 labels:
 - pairs:

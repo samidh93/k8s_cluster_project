@@ -5,8 +5,6 @@ resources:
 - ../../base
 - ../../namespaces
 
-namespace: app
-
 patches:
 - target:
     kind: Deployment
@@ -19,6 +17,5 @@ patches:
       path: /metadata/labels/environment
       value: development
 
-labels:
-- pairs:
-    environment: development
+commonLabels:
+  environment: development
