@@ -12,6 +12,7 @@ data:
       url: http://prometheus:9090
       access: proxy
       isDefault: true
+
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -48,6 +49,11 @@ spec:
           mountPath: /var/lib/grafana
         - name: grafana-datasources
           mountPath: /etc/grafana/provisioning/datasources
+        - name: grafana-dashboards
+          mountPath: /etc/grafana/provisioning/dashboards
+        - name: grafana-dashboard-provisioning
+          mountPath: /etc/grafana/provisioning/dashboards.yaml
+          subPath: dashboards.yaml
         resources:
           requests:
             memory: "128Mi"
@@ -74,6 +80,12 @@ spec:
       - name: grafana-datasources
         configMap:
           name: grafana-datasources
+      - name: grafana-dashboards
+        configMap:
+          name: grafana-dashboard-nginx
+      - name: grafana-dashboard-provisioning
+        configMap:
+          name: grafana-dashboard-provisioning
 ---
 apiVersion: v1
 kind: Service

@@ -35,6 +35,10 @@ spec:
         app: app
         environment: development
         version: v1
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9113"
+        prometheus.io/path: "/metrics"
     spec:
       containers:
       - env:
@@ -101,6 +105,21 @@ spec:
         - mountPath: /etc/app/secrets
           name: app-secrets
           readOnly: true
+      - name: nginx-exporter
+        image: nginx/nginx-prometheus-exporter:0.11.0
+        args:
+        - -nginx.scrape-uri=http://localhost/nginx_status
+        ports:
+        - containerPort: 9113
+          name: metrics
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 100m
+            memory: 64Mi
+          requests:
+            cpu: 50m
+            memory: 32Mi
       dnsPolicy: ClusterFirst
       restartPolicy: Always
       schedulerName: default-scheduler
