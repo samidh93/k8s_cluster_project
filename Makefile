@@ -1,8 +1,11 @@
-.PHONY: help deploy-dev deploy-staging deploy-prod clean status logs
+.PHONY: help deploy-dev deploy-staging deploy-prod clean status logs build-frontend build-backend build-all
 
 # Default target
 help:
 	@echo "Available commands:"
+	@echo "  build-frontend  - Build React frontend"
+	@echo "  build-backend   - Build Java backend"
+	@echo "  build-all       - Build both frontend and backend"
 	@echo "  deploy-dev      - Deploy to development environment"
 	@echo "  deploy-staging  - Deploy to staging environment"
 	@echo "  deploy-prod     - Deploy to production environment"
@@ -10,8 +13,20 @@ help:
 	@echo "  status          - Show cluster status"
 	@echo "  logs            - Show logs for all pods"
 
+# Build targets
+build-frontend:
+	@echo "Building React frontend..."
+	cd src/frontend && npm install && npm run build
+
+build-backend:
+	@echo "Building Java backend..."
+	cd src/backend && mvn clean package -DskipTests
+
+build-all: build-frontend build-backend
+	@echo "All components built successfully!"
+
 # Development deployment
-deploy-dev:
+deploy-dev: build-all
 	kubectl apply -k k8s/overlays/development/
 
 # Staging deployment

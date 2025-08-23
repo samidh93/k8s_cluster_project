@@ -4,6 +4,20 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
+# Java
+*.class
+*.jar
+*.war
+*.ear
+target/
+!.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+# Maven
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.properties
+
 # Docker
 .dockerignore
 
