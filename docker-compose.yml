@@ -87,10 +87,10 @@ services:
       dockerfile: docker/frontend.Dockerfile
     container_name: todo-frontend
     environment:
-      REACT_APP_API_URL: http://localhost:8080/api
+      REACT_APP_API_URL: http://localhost/api
       NODE_ENV: development
     ports:
-      - "3001:80"
+      - "3002:80"
     volumes:
       - ./src/frontend:/app/src
       - /app/node_modules
@@ -134,7 +134,7 @@ services:
     ports:
       - "9090:9090"
     volumes:
-      - ./k8s/base/prometheus-config.yaml:/etc/prometheus/prometheus.yml:ro
+      - ./docker/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus_data:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
@@ -156,7 +156,7 @@ services:
       GF_SECURITY_ADMIN_PASSWORD: admin
       GF_USERS_ALLOW_SIGN_UP: false
     ports:
-      - "3001:3000"
+      - "3003:3000"
     volumes:
       - grafana_data:/var/lib/grafana
       - ./k8s/base/grafana-datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml:ro
