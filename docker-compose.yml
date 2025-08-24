@@ -159,9 +159,9 @@ services:
       - "3003:3000"
     volumes:
       - grafana_data:/var/lib/grafana
-      - ./k8s/base/grafana-datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml:ro
-      - ./k8s/base/grafana-dashboard-provisioning.yaml:/etc/grafana/provisioning/dashboards/dashboards.yaml:ro
-      - ./k8s/base/grafana-dashboard-nginx.yaml:/etc/grafana/provisioning/dashboards/nginx-dashboard.json:ro
+      - ./docker/grafana-datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml:ro
+      - ./docker/grafana-dashboards.yaml:/etc/grafana/provisioning/dashboards/dashboards.yaml:ro
+      - ./docker/nginx-dashboard.json:/etc/grafana/provisioning/dashboards/nginx-dashboard.json:ro
     depends_on:
       - prometheus
     networks:
