@@ -5,39 +5,47 @@ spring:
   
   # Database Configuration
   datasource:
-    url: jdbc:postgresql://localhost:5432/tododb
-    username: ${DB_USERNAME:postgres}
-    password: ${DB_PASSWORD:password}
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:tododb}}
+    username: ${SPRING_DATASOURCE_USERNAME:${DB_USERNAME:postgres}}
+    password: ${SPRING_DATASOURCE_PASSWORD:${DB_PASSWORD:password}}
     driver-class-name: org.postgresql.Driver
+    # Connection pool settings
+    hikari:
+      auto-commit: true
+      connection-timeout: 30000
+      maximum-pool-size: 10
+      minimum-idle: 5
   
   # JPA/Hibernate Configuration
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
     show-sql: false
+    open-in-view: false
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
-        jdbc:
-          batch_size: 20
-        order_inserts: true
-        order_updates: true
+        # Disable transaction management
         connection:
-          provider_disables_autocommit: true
+          provider_disables_autocommit: false
+        # Disable second-level cache
+        cache:
+          use_second_level_cache: false
+          use_query_cache: false
   
-  # Redis Configuration
-  redis:
-    host: ${REDIS_HOST:localhost}
-    port: ${REDIS_PORT:6379}
-    password: ${REDIS_PASSWORD:}
-    timeout: 2000ms
-    lettuce:
-      pool:
-        max-active: 8
-        max-idle: 8
-        min-idle: 0
-        max-wait: -1ms
+  # Redis Configuration (temporarily disabled)
+  # redis:
+  #   host: ${SPRING_REDIS_HOST:${REDIS_HOST:localhost}}
+  #   port: ${SPRING_REDIS_PORT:${REDIS_PORT:6379}}
+  #   password: ${SPRING_REDIS_PASSWORD:${REDIS_PASSWORD:}}
+  #   timeout: 2000ms
+  #   lettuce:
+  #     pool:
+  #       max-active: 8
+  #       max-idle: 8
+  #       min-idle: 0
+  #       max-wait: -1ms
 
 # Server Configuration
 server:
@@ -78,10 +86,7 @@ logging:
 
 # Cache Configuration
   cache:
-    type: redis
-    redis:
-      time-to-live: 600000 # 10 minutes
-      cache-null-values: false
+    type: simple
 
 # Profiles
 ---
@@ -92,7 +97,7 @@ spring:
   jpa:
     show-sql: true
     hibernate:
-      ddl-auto: create-drop
+      ddl-auto: validate
 logging:
   level:
     com.todoapp: DEBUG

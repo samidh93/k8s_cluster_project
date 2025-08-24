@@ -4,12 +4,9 @@ import com.todoapp.entity.Todo;
 import com.todoapp.repository.TodoRepository;
 import com.todoapp.service.TodoService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -19,7 +16,6 @@ import java.util.Optional;
  * Implementation of TodoService with business logic
  */
 @Service
-@Transactional
 public class TodoServiceImpl implements TodoService {
 
     private final TodoRepository todoRepository;
@@ -30,7 +26,6 @@ public class TodoServiceImpl implements TodoService {
     }
 
     @Override
-    @CacheEvict(value = "todos", allEntries = true)
     public Todo createTodo(Todo todo) {
         // Validate todo
         if (todo.getTitle() == null || todo.getTitle().trim().isEmpty()) {
@@ -46,25 +41,21 @@ public class TodoServiceImpl implements TodoService {
     }
 
     @Override
-    @Cacheable(value = "todos", key = "'all'")
     public Page<Todo> getAllTodos(Pageable pageable) {
         return todoRepository.findAll(pageable);
     }
 
     @Override
-    @Cacheable(value = "todos", key = "'all'")
     public List<Todo> getAllTodos() {
         return todoRepository.findAll();
     }
 
     @Override
-    @Cacheable(value = "todos", key = "#id")
     public Optional<Todo> getTodoById(Long id) {
         return todoRepository.findById(id);
     }
 
     @Override
-    @CacheEvict(value = "todos", allEntries = true)
     public Todo updateTodo(Long id, Todo todoDetails) {
         Todo existingTodo = todoRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Todo not found with id: " + id));
@@ -87,7 +78,6 @@ public class TodoServiceImpl implements TodoService {
     }
 
     @Override
-    @CacheEvict(value = "todos", allEntries = true)
     public void deleteTodo(Long id) {
         if (!todoRepository.existsById(id)) {
             throw new RuntimeException("Todo not found with id: " + id);
@@ -96,7 +86,6 @@ public class TodoServiceImpl implements TodoService {
     }
 
     @Override
-    @CacheEvict(value = "todos", allEntries = true)
     public Todo markAsCompleted(Long id) {
         Todo todo = todoRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Todo not found with id: " + id));
@@ -106,7 +95,6 @@ public class TodoServiceImpl implements TodoService {
     }
 
     @Override
-    @CacheEvict(value = "todos", allEntries = true)
     public Todo markAsIncomplete(Long id) {
         Todo todo = todoRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Todo not found with id: " + id));
@@ -116,19 +104,16 @@ public class TodoServiceImpl implements TodoService {
     }
 
     @Override
-    @Cacheable(value = "todos", key = "'status_' + #completed")
     public List<Todo> getTodosByStatus(boolean completed) {
         return todoRepository.findByCompleted(completed);
     }
 
     @Override
-    @Cacheable(value = "todos", key = "'priority_' + #priority")
     public List<Todo> getTodosByPriority(Todo.Priority priority) {
         return todoRepository.findByPriority(priority);
     }
 
     @Override
-    @Cacheable(value = "todos", key = "'search_' + #searchTerm")
     public List<Todo> searchTodos(String searchTerm) {
         if (searchTerm == null || searchTerm.trim().isEmpty()) {
             return getAllTodos();
@@ -146,19 +131,16 @@ public class TodoServiceImpl implements TodoService {
     }
 
     @Override
-    @Cacheable(value = "todos", key = "'overdue'")
     public List<Todo> getOverdueTodos() {
         return todoRepository.findOverdueTodos(LocalDateTime.now());
     }
 
     @Override
-    @Cacheable(value = "todos", key = "'due_today'")
     public List<Todo> getTodosDueToday() {
         return todoRepository.findTodosDueToday(LocalDateTime.now());
     }
 
     @Override
-    @Cacheable(value = "todos", key = "'due_this_week'")
     public List<Todo> getTodosDueThisWeek() {
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime startOfWeek = now.toLocalDate().atStartOfDay();
@@ -168,13 +150,11 @@ public class TodoServiceImpl implements TodoService {
     }
 
     @Override
-    @Cacheable(value = "todos", key = "'high_priority'")
     public List<Todo> getHighPriorityIncompleteTodos() {
         return todoRepository.findHighPriorityIncompleteTodos();
     }
 
     @Override
-    @Cacheable(value = "todos", key = "'statistics'")
     public TodoStatistics getTodoStatistics() {
         long totalTodos = todoRepository.count();
         long completedTodos = todoRepository.countByCompleted(true);
@@ -187,7 +167,6 @@ public class TodoServiceImpl implements TodoService {
     }
 
     @Override
-    @CacheEvict(value = "todos", allEntries = true)
     public void cleanupOldCompletedTodos(int daysToKeep) {
         LocalDateTime cutoffDate = LocalDateTime.now().minusDays(daysToKeep);
         todoRepository.deleteOldCompletedTodos(cutoffDate);

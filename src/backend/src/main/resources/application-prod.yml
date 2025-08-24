@@ -1,0 +1,147 @@
+# Production Environment Configuration
+spring:
+  application:
+    name: todo-backend
+  
+  # Database Configuration for Production
+  datasource:
+    url: jdbc:postgresql://${DB_HOST}:${DB_PORT:5432}/${DB_NAME}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 10
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      leak-detection-threshold: 60000
+  
+  # JPA/Hibernate Configuration
+  jpa:
+    hibernate:
+      ddl-auto: validate  # Never auto-create in production
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: false
+        jdbc:
+          batch_size: 50
+          batch_versioned_data: true
+          batch.builder: legacy
+        order_inserts: true
+        order_updates: true
+        connection:
+          provider_disables_autocommit: true
+        cache:
+          use_second_level_cache: true
+          use_query_cache: true
+          region:
+            factory_class: org.hibernate.cache.jcache.JCacheRegionFactory
+  
+  # Redis Configuration for Production
+  redis:
+    host: ${REDIS_HOST}
+    port: ${REDIS_PORT:6379}
+    password: ${REDIS_PASSWORD}
+    timeout: 5000ms
+    lettuce:
+      pool:
+        max-active: 16
+        max-idle: 16
+        min-idle: 4
+        max-wait: 5000ms
+      shutdown-timeout: 100ms
+  
+  # Cache Configuration
+  cache:
+    type: redis
+    redis:
+      time-to-live: 900000 # 15 minutes
+      cache-null-values: false
+      key-prefix: "todo:"
+
+# Server Configuration
+server:
+  port: ${SERVER_PORT:8080}
+  servlet:
+    context-path: /api
+  compression:
+    enabled: true
+    mime-types: text/html,text/xml,text/plain,text/css,text/javascript,application/javascript,application/json
+    min-response-size: 1024
+
+# Logging Configuration
+logging:
+  level:
+    root: WARN
+    com.todoapp: INFO
+    org.springframework.web: WARN
+    org.hibernate.SQL: WARN
+    org.hibernate.type.descriptor.sql.BasicBinder: WARN
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: logs/todo-app.log
+    max-size: 100MB
+    max-history: 30
+
+# Actuator Configuration
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: never
+      show-components: always
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+  health:
+    redis:
+      enabled: true
+    db:
+      enabled: true
+  info:
+    env:
+      enabled: true
+
+# Application-specific Configuration
+app:
+  cors:
+    allowed-origins: ${ALLOWED_ORIGINS:https://yourdomain.com}
+    allowed-methods: GET,POST,PUT,DELETE,PATCH,OPTIONS
+    allowed-headers: "*"
+    allow-credentials: true
+    max-age: 3600
+  
+  security:
+    jwt:
+      secret: ${JWT_SECRET}
+      expiration: ${JWT_EXPIRATION:86400000}
+  
+  pagination:
+    default-page-size: 20
+    max-page-size: 100
+  
+  cache:
+    todo:
+      ttl: 600000 # 10 minutes
+      max-size: 2000
+    jcache:
+      config: classpath:ehcache.xml
+
+# Performance Tuning
+  task:
+    execution:
+      pool:
+        core-size: 8
+        max-size: 16
+        queue-capacity: 100
+        keep-alive: 60s

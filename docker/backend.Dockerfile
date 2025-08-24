@@ -1,5 +1,5 @@
 # Multi-stage build for Java Spring Boot Backend
-FROM maven:3.9.5-openjdk-17 AS builder
+FROM maven:latest AS builder
 
 # Set working directory
 WORKDIR /app
@@ -17,7 +17,7 @@ COPY src/backend/src ./src
 RUN mvn clean package -DskipTests
 
 # Runtime stage
-FROM openjdk:17-jre-slim
+FROM openjdk:17-slim
 
 # Create app user for security
 RUN groupadd -r appuser && useradd -r -g appuser appuser
