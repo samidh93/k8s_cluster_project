@@ -14,6 +14,8 @@ import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 import java.util.List;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 /**
  * REST controller for Todo operations
  */
@@ -25,6 +27,7 @@ public class TodoController {
     private final TodoService todoService;
 
     @Autowired
+    @SuppressFBWarnings("EI_EXPOSE_REP2")
     public TodoController(TodoService todoService) {
         this.todoService = todoService;
     }
