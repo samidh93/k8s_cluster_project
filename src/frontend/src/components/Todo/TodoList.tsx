@@ -46,11 +46,7 @@ const TodoList: React.FC = () => {
   const [filters, setFilters] = useState<Record<string, any>>({});
   const [searchTerm, setSearchTerm] = useState('');
 
-  useEffect(() => {
-    fetchTodos();
-  }, [page, rowsPerPage, filters]);
-
-  const fetchTodos = async () => {
+  const fetchTodos = useCallback(async () => {
     try {
       setLoading(true);
       const response = await todoApi.getTodos(page, rowsPerPage, 'createdAt', 'desc');
@@ -63,7 +59,11 @@ const TodoList: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, rowsPerPage, filters]);
+
+  useEffect(() => {
+    fetchTodos();
+  }, [fetchTodos]);
 
   const handleSearch = async () => {
     if (searchTerm.trim()) {
