@@ -56,7 +56,7 @@ jobs:
       working-directory: src/backend
       run: |
         echo "🧪 Running Java backend tests..."
-        ./mvnw clean test
+        mvn clean test
         echo "✅ Backend tests completed!"
         
     # Frontend Testing
@@ -73,8 +73,8 @@ jobs:
       working-directory: src/backend
       run: |
         echo "🔍 Checking Java code quality..."
-        ./mvnw checkstyle:check
-        ./mvnw spotbugs:check
+        mvn checkstyle:check
+        mvn spotbugs:check
         echo "✅ Backend code quality checks passed!"
         
     - name: Frontend Code Quality
@@ -116,7 +116,7 @@ jobs:
       working-directory: src/backend
       run: |
         echo "🏗️ Building Java backend..."
-        ./mvnw clean package -DskipTests
+        mvn clean package -DskipTests
         echo "✅ Backend JAR built successfully!"
         
     # Build Frontend
