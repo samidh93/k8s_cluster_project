@@ -59,7 +59,7 @@ const TodoList: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [page, rowsPerPage, filters]);
+  }, [page, rowsPerPage]);
 
   useEffect(() => {
     fetchTodos();
