@@ -17,26 +17,24 @@ The CI/CD pipeline consists of 6 main jobs:
 
 ## 🔐 Required GitHub Secrets
 
-To use the Docker image building functionality, you need to configure these secrets in your GitHub repository:
+**Good news! No secrets are required!** 🎉
 
-### **Docker Hub Credentials**
-- `DOCKER_USERNAME` - Your Docker Hub username
-- `DOCKER_PASSWORD` - Your Docker Hub access token (not password)
+The pipeline uses **GitHub Container Registry (ghcr.io)** which automatically authenticates using your repository's built-in `GITHUB_TOKEN`.
 
-### **How to Set Up Secrets**
+### **How It Works**
 
-1. Go to your GitHub repository
-2. Click **Settings** → **Secrets and variables** → **Actions**
-3. Click **New repository secret**
-4. Add each secret with the exact names above
+The pipeline automatically:
+1. **Authenticates** to GitHub Container Registry using `GITHUB_TOKEN`
+2. **Builds Docker images** from your source code
+3. **Pushes images** to `ghcr.io/${{ github.repository }}/`
+4. **Tags images** with commit SHA and `latest`
 
-### **Getting Docker Hub Access Token**
+### **Image URLs**
 
-1. Log in to [Docker Hub](https://hub.docker.com)
-2. Go to **Account Settings** → **Security**
-3. Click **New Access Token**
-4. Give it a name (e.g., "GitHub Actions")
-5. Copy the token and use it as `DOCKER_PASSWORD`
+Your images will be available at:
+- `ghcr.io/YOUR_USERNAME/kubernetes/backend:latest`
+- `ghcr.io/YOUR_USERNAME/kubernetes/frontend:latest`
+- `ghcr.io/YOUR_USERNAME/kubernetes/nginx:latest`
 
 ## 🏗️ Pipeline Triggers
 
