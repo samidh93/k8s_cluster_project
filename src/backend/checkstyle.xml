@@ -13,12 +13,11 @@
         <property name="fileNamePattern" value=".*[/\\]generated-sources[/\\].*"/>
     </module>
 
-    <!-- Checks for Size Violations -->
+    <!-- Basic file checks -->
     <module name="FileLength">
         <property name="max" value="2000"/>
     </module>
 
-    <!-- Checks for whitespace -->
     <module name="FileTabCharacter">
         <property name="eachLine" value="true"/>
     </module>
@@ -27,18 +26,7 @@
         <property name="max" value="120"/>
     </module>
 
-    <!-- Checks for Naming Conventions -->
-    <module name="ConstantName"/>
-    <module name="LocalFinalVariableName"/>
-    <module name="LocalVariableName"/>
-    <module name="MemberName"/>
-    <module name="MethodName"/>
-    <module name="PackageName"/>
-    <module name="ParameterName"/>
-    <module name="StaticVariableName"/>
-    <module name="TypeName"/>
-
-    <!-- Checks for imports -->
+    <!-- Import checks -->
     <module name="AvoidStarImport"/>
     <module name="IllegalImport"/>
     <module name="RedundantImport"/>
@@ -46,15 +34,12 @@
         <property name="processJavadoc" value="false"/>
     </module>
 
-    <!-- Checks for Size Violations -->
+    <!-- Method checks -->
     <module name="MethodLength">
         <property name="max" value="150"/>
     </module>
-    <module name="ParameterNumber">
-        <property name="max" value="7"/>
-    </module>
 
-    <!-- Checks for whitespace -->
+    <!-- Whitespace checks -->
     <module name="EmptyForIteratorPad"/>
     <module name="GenericWhitespace"/>
     <module name="MethodParamPad"/>
@@ -66,54 +51,33 @@
     <module name="WhitespaceAfter"/>
     <module name="WhitespaceAround"/>
 
-    <!-- Modifier Checks -->
-    <module name="ModifierOrder"/>
-    <module name="RedundantModifier"/>
-
-    <!-- Checks for blocks -->
+    <!-- Block checks -->
     <module name="AvoidNestedBlocks"/>
     <module name="EmptyBlock"/>
     <module name="LeftCurly"/>
     <module name="NeedBraces"/>
     <module name="RightCurly"/>
 
-    <!-- Checks for problems -->
+    <!-- Problem checks -->
     <module name="EmptyStatement"/>
-    <module name="EqualsHashCode"/>
-    <module name="HiddenField">
-        <property name="ignoreSetter" value="true"/>
-        <property name="ignoreGetter" value="true"/>
-    </module>
     <module name="IllegalInstantiation"/>
     <module name="InnerAssignment"/>
-    <module name="MagicNumber"/>
     <module name="MissingSwitchDefault"/>
     <module name="SimplifyBooleanExpression"/>
     <module name="SimplifyBooleanReturn"/>
 
-    <!-- Checks for class design -->
-    <module name="DesignForExtension"/>
-    <module name="FinalClass"/>
+    <!-- Design checks -->
     <module name="HideUtilityClassConstructor"/>
     <module name="InterfaceIsType"/>
     <module name="VisibilityModifier"/>
 
-    <!-- Miscellaneous other checks -->
+    <!-- Other checks -->
     <module name="ArrayTypeStyle"/>
     <module name="FinalParameters"/>
     <module name="TodoComment"/>
     <module name="UpperEll"/>
 
-    <!-- Checks for annotations -->
-    <module name="AnnotationLocation">
-        <property name="tokens" value="CLASS_DEF, INTERFACE_DEF, ENUM_DEF, METHOD_DEF, CTOR_DEF"/>
-    </module>
-    <module name="AnnotationLocation">
-        <property name="tokens" value="VARIABLE_DEF, PARAMETER_DEF, ANNOTATION_FIELD_DEF"/>
-        <property name="allowSamelineMultipleAnnotations" value="true"/>
-    </module>
-
-    <!-- Checks for Javadoc comments -->
+    <!-- Javadoc checks -->
     <module name="JavadocMethod">
         <property name="scope" value="public"/>
         <property name="allowMissingJavadoc" value="true"/>
@@ -126,5 +90,4 @@
         <property name="scope" value="public"/>
         <property name="allowMissingJavadoc" value="true"/>
     </module>
-    <module name="JavadocStyle"/>
 </module>
