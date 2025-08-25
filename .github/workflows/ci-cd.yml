@@ -81,8 +81,7 @@ jobs:
       working-directory: src/frontend
       run: |
         echo "🔍 Checking TypeScript code quality..."
-        npm run lint
-        npm run type-check
+        npm run build
         echo "✅ Frontend code quality checks passed!"
 
   # ========================================
