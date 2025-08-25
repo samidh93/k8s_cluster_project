@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import {
-  Grid,
   Card,
   CardContent,
   Typography,
@@ -14,7 +13,6 @@ import {
   Assignment as TodoIcon,
   CheckCircle as CompletedIcon,
   Schedule as PendingIcon,
-  PriorityHigh as HighPriorityIcon,
   Warning as OverdueIcon,
 } from '@mui/icons-material';
 import { TodoStatistics, Todo } from '../../types/Todo';

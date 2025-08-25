@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   Box,
   Card,
@@ -30,13 +30,7 @@ const TodoDetail: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [updating, setUpdating] = useState(false);
 
-  useEffect(() => {
-    if (id) {
-      fetchTodo();
-    }
-  }, [id]);
-
-  const fetchTodo = async () => {
+  const fetchTodo = useCallback(async () => {
     try {
       setLoading(true);
       const todoData = await todoApi.getTodoById(parseInt(id!));
@@ -48,7 +42,13 @@ const TodoDetail: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
+
+  useEffect(() => {
+    if (id) {
+      fetchTodo();
+    }
+  }, [id, fetchTodo]);
 
   const handleStatusToggle = async () => {
     if (!todo) return;

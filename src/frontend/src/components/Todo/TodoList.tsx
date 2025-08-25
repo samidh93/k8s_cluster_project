@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   Box,
   Card,
@@ -22,8 +22,6 @@ import {
   TablePagination,
   Alert,
   CircularProgress,
-  Switch,
-  FormControlLabel,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -34,7 +32,7 @@ import {
   Search as SearchIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import { Todo, Priority, TodoFilters } from '../../types/Todo';
+import { Todo, Priority } from '../../types/Todo';
 import { todoApi } from '../../services/todoApi';
 
 const TodoList: React.FC = () => {
@@ -45,7 +43,7 @@ const TodoList: React.FC = () => {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [totalElements, setTotalElements] = useState(0);
-  const [filters, setFilters] = useState<TodoFilters>({});
+  const [filters, setFilters] = useState<Record<string, any>>({});
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
@@ -82,7 +80,7 @@ const TodoList: React.FC = () => {
     }
   };
 
-  const handleFilterChange = (filterType: keyof TodoFilters, value: any) => {
+  const handleFilterChange = (filterType: string, value: any) => {
     setFilters(prev => ({ ...prev, [filterType]: value }));
     setPage(0);
   };

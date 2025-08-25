@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   Box,
   Card,
@@ -10,7 +10,6 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  Grid,
   Alert,
   CircularProgress,
   Chip,
@@ -18,7 +17,7 @@ import {
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { useNavigate, useParams } from 'react-router-dom';
 import dayjs, { Dayjs } from 'dayjs';
-import { Todo, TodoFormData, Priority } from '../../types/Todo';
+import { TodoFormData, Priority } from '../../types/Todo';
 import { todoApi } from '../../services/todoApi';
 
 const TodoForm: React.FC = () => {
@@ -38,13 +37,7 @@ const TodoForm: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
-  useEffect(() => {
-    if (isEditing) {
-      fetchTodo();
-    }
-  }, [id]);
-
-  const fetchTodo = async () => {
+  const fetchTodo = useCallback(async () => {
     try {
       setLoading(true);
       const todo = await todoApi.getTodoById(parseInt(id!));
@@ -60,7 +53,13 @@ const TodoForm: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
+
+  useEffect(() => {
+    if (isEditing) {
+      fetchTodo();
+    }
+  }, [isEditing, fetchTodo]);
 
   const validateForm = (): boolean => {
     const errors: Record<string, string> = {};
