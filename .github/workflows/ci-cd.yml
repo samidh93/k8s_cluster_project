@@ -128,13 +128,13 @@ jobs:
         
     # Upload Build Artifacts
     - name: Upload Backend Artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: backend-jar
         path: src/backend/target/*.jar
         
     - name: Upload Frontend Artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: frontend-build
         path: src/frontend/build/
@@ -153,13 +153,13 @@ jobs:
       uses: actions/checkout@v4
       
     - name: Download Build Artifacts
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: backend-jar
         path: src/backend/target/
         
     - name: Download Frontend Artifacts
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: frontend-build
         path: src/frontend/build/
