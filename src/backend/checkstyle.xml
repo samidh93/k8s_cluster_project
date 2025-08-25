@@ -13,81 +13,84 @@
         <property name="fileNamePattern" value=".*[/\\]generated-sources[/\\].*"/>
     </module>
 
-    <!-- Basic file checks -->
-    <module name="FileLength">
-        <property name="max" value="2000"/>
-    </module>
+    <!-- TreeWalker module for Java source files -->
+    <module name="TreeWalker">
+        <!-- File checks -->
+        <module name="FileLength">
+            <property name="max" value="2000"/>
+        </module>
 
-    <module name="FileTabCharacter">
-        <property name="eachLine" value="true"/>
-    </module>
+        <module name="FileTabCharacter">
+            <property name="eachLine" value="true"/>
+        </module>
 
-    <module name="LineLength">
-        <property name="max" value="120"/>
-    </module>
+        <module name="LineLength">
+            <property name="max" value="120"/>
+        </module>
 
-    <!-- Import checks -->
-    <module name="AvoidStarImport"/>
-    <module name="IllegalImport"/>
-    <module name="RedundantImport"/>
-    <module name="UnusedImports">
-        <property name="processJavadoc" value="false"/>
-    </module>
+        <!-- Import checks -->
+        <module name="AvoidStarImport"/>
+        <module name="IllegalImport"/>
+        <module name="RedundantImport"/>
+        <module name="UnusedImports">
+            <property name="processJavadoc" value="false"/>
+        </module>
 
-    <!-- Method checks -->
-    <module name="MethodLength">
-        <property name="max" value="150"/>
-    </module>
+        <!-- Method checks -->
+        <module name="MethodLength">
+            <property name="max" value="150"/>
+        </module>
 
-    <!-- Whitespace checks -->
-    <module name="EmptyForIteratorPad"/>
-    <module name="GenericWhitespace"/>
-    <module name="MethodParamPad"/>
-    <module name="NoWhitespaceAfter"/>
-    <module name="NoWhitespaceBefore"/>
-    <module name="OperatorWrap"/>
-    <module name="ParenPad"/>
-    <module name="TypecastParenPad"/>
-    <module name="WhitespaceAfter"/>
-    <module name="WhitespaceAround"/>
+        <!-- Whitespace checks -->
+        <module name="EmptyForIteratorPad"/>
+        <module name="GenericWhitespace"/>
+        <module name="MethodParamPad"/>
+        <module name="NoWhitespaceAfter"/>
+        <module name="NoWhitespaceBefore"/>
+        <module name="OperatorWrap"/>
+        <module name="ParenPad"/>
+        <module name="TypecastParenPad"/>
+        <module name="WhitespaceAfter"/>
+        <module name="WhitespaceAround"/>
 
-    <!-- Block checks -->
-    <module name="AvoidNestedBlocks"/>
-    <module name="EmptyBlock"/>
-    <module name="LeftCurly"/>
-    <module name="NeedBraces"/>
-    <module name="RightCurly"/>
+        <!-- Block checks -->
+        <module name="AvoidNestedBlocks"/>
+        <module name="EmptyBlock"/>
+        <module name="LeftCurly"/>
+        <module name="NeedBraces"/>
+        <module name="RightCurly"/>
 
-    <!-- Problem checks -->
-    <module name="EmptyStatement"/>
-    <module name="IllegalInstantiation"/>
-    <module name="InnerAssignment"/>
-    <module name="MissingSwitchDefault"/>
-    <module name="SimplifyBooleanExpression"/>
-    <module name="SimplifyBooleanReturn"/>
+        <!-- Problem checks -->
+        <module name="EmptyStatement"/>
+        <module name="IllegalInstantiation"/>
+        <module name="InnerAssignment"/>
+        <module name="MissingSwitchDefault"/>
+        <module name="SimplifyBooleanExpression"/>
+        <module name="SimplifyBooleanReturn"/>
 
-    <!-- Design checks -->
-    <module name="HideUtilityClassConstructor"/>
-    <module name="InterfaceIsType"/>
-    <module name="VisibilityModifier"/>
+        <!-- Design checks -->
+        <module name="HideUtilityClassConstructor"/>
+        <module name="InterfaceIsType"/>
+        <module name="VisibilityModifier"/>
 
-    <!-- Other checks -->
-    <module name="ArrayTypeStyle"/>
-    <module name="FinalParameters"/>
-    <module name="TodoComment"/>
-    <module name="UpperEll"/>
+        <!-- Other checks -->
+        <module name="ArrayTypeStyle"/>
+        <module name="FinalParameters"/>
+        <module name="TodoComment"/>
+        <module name="UpperEll"/>
 
-    <!-- Javadoc checks -->
-    <module name="JavadocMethod">
-        <property name="scope" value="public"/>
-        <property name="allowMissingJavadoc" value="true"/>
-    </module>
-    <module name="JavadocType">
-        <property name="scope" value="public"/>
-        <property name="allowMissingJavadoc" value="true"/>
-    </module>
-    <module name="JavadocVariable">
-        <property name="scope" value="public"/>
-        <property name="allowMissingJavadoc" value="true"/>
+        <!-- Javadoc checks -->
+        <module name="JavadocMethod">
+            <property name="scope" value="public"/>
+            <property name="allowMissingJavadoc" value="true"/>
+        </module>
+        <module name="JavadocType">
+            <property name="scope" value="public"/>
+            <property name="allowMissingJavadoc" value="true"/>
+        </module>
+        <module name="JavadocVariable">
+            <property name="scope" value="public"/>
+            <property name="allowMissingJavadoc" value="true"/>
+        </module>
     </module>
 </module>
