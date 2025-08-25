@@ -1,0 +1,282 @@
+name: Todo App CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+env:
+  REGISTRY: docker.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  # ========================================
+  # JOB 1: Code Quality & Testing
+  # ========================================
+  test:
+    name: Test & Quality Check
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Java 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        cache: 'maven'
+        
+    - name: Set up Node.js 18
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: 'src/frontend/package-lock.json'
+        
+    - name: Cache Maven packages
+      uses: actions/cache@v3
+      with:
+        path: ~/.m2
+        key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+        restore-keys: ${{ runner.os }}-m2
+        
+    - name: Cache npm packages
+      uses: actions/cache@v3
+      with:
+        path: src/frontend/node_modules
+        key: ${{ runner.os }}-node-${{ hashFiles('src/frontend/package-lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-node-
+          
+    # Backend Testing
+    - name: Test Backend
+      working-directory: src/backend
+      run: |
+        echo "🧪 Running Java backend tests..."
+        ./mvnw clean test
+        echo "✅ Backend tests completed!"
+        
+    # Frontend Testing
+    - name: Test Frontend
+      working-directory: src/frontend
+      run: |
+        echo "🧪 Running React frontend tests..."
+        npm ci
+        npm run test -- --watchAll=false --coverage
+        echo "✅ Frontend tests completed!"
+        
+    # Code Quality Checks
+    - name: Backend Code Quality
+      working-directory: src/backend
+      run: |
+        echo "🔍 Checking Java code quality..."
+        ./mvnw checkstyle:check
+        ./mvnw spotbugs:check
+        echo "✅ Backend code quality checks passed!"
+        
+    - name: Frontend Code Quality
+      working-directory: src/frontend
+      run: |
+        echo "🔍 Checking TypeScript code quality..."
+        npm run lint
+        npm run type-check
+        echo "✅ Frontend code quality checks passed!"
+
+  # ========================================
+  # JOB 2: Build & Package
+  # ========================================
+  build:
+    name: Build Applications
+    runs-on: ubuntu-latest
+    needs: test
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Java 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        cache: 'maven'
+        
+    - name: Set up Node.js 18
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: 'src/frontend/package-lock.json'
+        
+    # Build Backend
+    - name: Build Backend JAR
+      working-directory: src/backend
+      run: |
+        echo "🏗️ Building Java backend..."
+        ./mvnw clean package -DskipTests
+        echo "✅ Backend JAR built successfully!"
+        
+    # Build Frontend
+    - name: Build Frontend
+      working-directory: src/frontend
+      run: |
+        echo "🏗️ Building React frontend..."
+        npm ci
+        npm run build
+        echo "✅ Frontend build completed!"
+        
+    # Upload Build Artifacts
+    - name: Upload Backend Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: backend-jar
+        path: src/backend/target/*.jar
+        
+    - name: Upload Frontend Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: frontend-build
+        path: src/frontend/build/
+
+  # ========================================
+  # JOB 3: Docker Image Building
+  # ========================================
+  docker:
+    name: Build & Push Docker Images
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.event_name == 'push'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Download Build Artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: backend-jar
+        path: src/backend/target/
+        
+    - name: Download Frontend Artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: frontend-build
+        path: src/frontend/build/
+        
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+      
+    - name: Log in to Docker Hub
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+        
+    # Build Backend Image
+    - name: Build Backend Image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: docker/backend.Dockerfile
+        push: true
+        tags: |
+          ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/backend:${{ github.sha }}
+          ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/backend:latest
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        
+    # Build Frontend Image
+    - name: Build Frontend Image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: docker/frontend.Dockerfile
+        push: true
+        tags: |
+          ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/frontend:${{ github.sha }}
+          ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/frontend:latest
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        
+    # Build Nginx Image
+    - name: Build Nginx Image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: docker/nginx.Dockerfile
+        push: true
+        tags: |
+          ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/nginx:${{ github.sha }}
+          ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/nginx:latest
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+  # ========================================
+  # JOB 4: Security Scanning
+  # ========================================
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    needs: build
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        scan-ref: '.'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+        
+    - name: Upload Trivy scan results to GitHub Security tab
+      uses: github/codeql-action/upload-sarif@v2
+      if: always()
+      with:
+        sarif_file: 'trivy-results.sarif'
+
+  # ========================================
+  # JOB 5: Deploy to Development
+  # ========================================
+  deploy-dev:
+    name: Deploy to Development
+    runs-on: ubuntu-latest
+    needs: [test, build, security]
+    if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
+    environment: development
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Deploy to Development Environment
+      run: |
+        echo "🚀 Deploying to development environment..."
+        echo "This would deploy using the latest Docker images"
+        echo "Development deployment completed!"
+
+  # ========================================
+  # JOB 6: Deploy to Production
+  # ========================================
+  deploy-prod:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [test, build, security, deploy-dev]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment: production
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Deploy to Production Environment
+      run: |
+        echo "🚀 Deploying to production environment..."
+        echo "This would deploy using the latest Docker images"
+        echo "Production deployment completed!"

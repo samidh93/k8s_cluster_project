@@ -63,13 +63,20 @@ management:
     web:
       exposure:
         include: health,info,metrics,prometheus
+      base-path: /actuator
   endpoint:
     health:
       show-details: when-authorized
+    metrics:
+      enabled: true
+    prometheus:
+      enabled: true
   metrics:
     export:
       prometheus:
         enabled: true
+        descriptions: true
+        step: 1m
 
 # Logging Configuration
 logging:

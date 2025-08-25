@@ -1,0 +1,240 @@
+{
+  "id": null,
+  "title": "Custom Todo Application Dashboard",
+  "tags": ["todo", "custom", "monitoring", "tutorial"],
+  "style": "dark",
+  "timezone": "browser",
+  "panels": [
+    {
+      "id": 1,
+      "title": "Application Overview",
+      "type": "row",
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 0},
+      "collapsed": false
+    },
+    {
+      "id": 2,
+      "title": "Backend Health Status",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "up{job=\"backend\"}",
+          "legendFormat": "Backend Status"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "steps": [
+              {"color": "red", "value": 0, "text": "DOWN"},
+              {"color": "green", "value": 1, "text": "UP"}
+            ]
+          },
+          "mappings": [
+            {
+              "options": {
+                "0": {"text": "DOWN", "color": "red"},
+                "1": {"text": "UP", "color": "green"}
+              },
+              "type": "value"
+            }
+          ]
+        }
+      },
+      "gridPos": {"h": 8, "w": 6, "x": 0, "y": 1}
+    },
+    {
+      "id": 3,
+      "title": "Database Connection Pool",
+      "type": "gauge",
+      "targets": [
+        {
+          "expr": "hikaricp_connections_active",
+          "legendFormat": "Active Connections"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "min": 0,
+          "max": 10,
+          "unit": "short",
+          "thresholds": {
+            "steps": [
+              {"color": "green", "value": 0},
+              {"color": "yellow", "value": 5},
+              {"color": "red", "value": 8}
+            ]
+          }
+        }
+      },
+      "gridPos": {"h": 8, "w": 6, "x": 6, "y": 1}
+    },
+    {
+      "id": 4,
+      "title": "HTTP Request Rate (5m)",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "rate(http_server_requests_total[5m])",
+          "legendFormat": "{{method}} {{uri}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 10
+          }
+        }
+      },
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 1}
+    },
+    {
+      "id": 5,
+      "title": "Memory Usage Breakdown",
+      "type": "piechart",
+      "targets": [
+        {
+          "expr": "jvm_memory_used_bytes",
+          "legendFormat": "{{area}} - {{id}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "vis": false
+            }
+          }
+        }
+      },
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 9}
+    },
+    {
+      "id": 6,
+      "title": "System Performance",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "system_cpu_usage",
+          "legendFormat": "System CPU"
+        },
+        {
+          "expr": "process_cpu_usage",
+          "legendFormat": "Process CPU"
+        },
+        {
+          "expr": "system_load_average_1m",
+          "legendFormat": "Load Average (1m)"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 10
+          },
+          "unit": "percent"
+        }
+      },
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 9}
+    },
+    {
+      "id": 7,
+      "title": "Database Performance",
+      "type": "row",
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 17},
+      "collapsed": false
+    },
+    {
+      "id": 8,
+      "title": "Connection Pool Details",
+      "type": "table",
+      "targets": [
+        {
+          "expr": "hikaricp_connections_active",
+          "legendFormat": "Active"
+        },
+        {
+          "expr": "hikaricp_connections_idle",
+          "legendFormat": "Idle"
+        },
+        {
+          "expr": "hikaricp_connections_max",
+          "legendFormat": "Max"
+        },
+        {
+          "expr": "hikaricp_connections_min",
+          "legendFormat": "Min"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "center"
+          }
+        }
+      },
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 18}
+    },
+    {
+      "id": 9,
+      "title": "JVM Threads",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "jvm_threads_live",
+          "legendFormat": "Live Threads"
+        },
+        {
+          "expr": "jvm_threads_daemon",
+          "legendFormat": "Daemon Threads"
+        },
+        {
+          "expr": "jvm_threads_peak",
+          "legendFormat": "Peak Threads"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 10
+          }
+        }
+      },
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 18}
+    }
+  ],
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "refresh": "30s",
+  "templating": {
+    "list": [
+      {
+        "name": "job",
+        "type": "query",
+        "query": "label_values(up, job)",
+        "refresh": 2,
+        "includeAll": false,
+        "multi": false
+      }
+    ]
+  }
+}
