@@ -13,6 +13,9 @@ RUN mvn dependency:go-offline -B
 # Copy source code
 COPY src/backend/src ./src
 
+# Copy checkstyle configuration
+COPY src/backend/checkstyle.xml .
+
 # Build the application
 RUN mvn clean package -DskipTests
 
