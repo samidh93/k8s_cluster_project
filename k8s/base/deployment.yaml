@@ -1,27 +1,17 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  annotations:
-    deployment.kubernetes.io/revision: "1"
-    kubectl.kubernetes.io/last-applied-configuration: |
-      {"apiVersion":"apps/v1","kind":"Deployment","metadata":{"annotations":{},"labels":{"app":"app","environment":"development","version":"v1"},"name":"app","namespace":"app"},"spec":{"replicas":1,"selector":{"matchLabels":{"app":"app","environment":"development"}},"template":{"metadata":{"labels":{"app":"app","environment":"development","version":"v1"}},"spec":{"containers":[{"env":[{"name":"APP_NAME","valueFrom":{"configMapKeyRef":{"key":"app.name","name":"app-config"}}},{"name":"APP_VERSION","valueFrom":{"configMapKeyRef":{"key":"app.version","name":"app-config"}}},{"name":"DB_HOST","valueFrom":{"configMapKeyRef":{"key":"db.host","name":"app-config"}}},{"name":"DB_PASSWORD","valueFrom":{"secretKeyRef":{"key":"db.password","name":"app-secrets"}}}],"image":"nginx:alpine","livenessProbe":{"httpGet":{"path":"/health","port":80},"initialDelaySeconds":30,"periodSeconds":10},"name":"app","ports":[{"containerPort":80}],"readinessProbe":{"httpGet":{"path":"/health","port":80},"initialDelaySeconds":5,"periodSeconds":5},"resources":{"limits":{"cpu":"500m","memory":"128Mi"},"requests":{"cpu":"250m","memory":"64Mi"}},"volumeMounts":[{"mountPath":"/usr/share/nginx/html/data","name":"app-data"},{"mountPath":"/etc/nginx/conf.d","name":"app-config"},{"mountPath":"/etc/app/secrets","name":"app-secrets","readOnly":true}]}],"volumes":[{"name":"app-data","persistentVolumeClaim":{"claimName":"app-data-pvc"}},{"configMap":{"name":"app-config"},"name":"app-config"},{"name":"app-secrets","secret":{"secretName":"app-secrets"}}]}}}}
-  creationTimestamp: "2025-08-23T19:35:25Z"
-  generation: 1
+  name: todo-backend
+  namespace: todo-app
   labels:
-    app: app
+    app: todo-backend
     environment: development
     version: v1
-  name: app
-  namespace: app
-  resourceVersion: "40591"
-  uid: 26ae93e9-076b-4f79-b00e-23615ea14e74
 spec:
-  progressDeadlineSeconds: 600
   replicas: 1
-  revisionHistoryLimit: 10
   selector:
     matchLabels:
-      app: app
+      app: todo-backend
       environment: development
   strategy:
     rollingUpdate:
@@ -30,129 +20,287 @@ spec:
     type: RollingUpdate
   template:
     metadata:
-      creationTimestamp: null
       labels:
-        app: app
+        app: todo-backend
         environment: development
         version: v1
       annotations:
         prometheus.io/scrape: "true"
-        prometheus.io/port: "9113"
-        prometheus.io/path: "/metrics"
+        prometheus.io/port: "8080"
+        prometheus.io/path: "/actuator/prometheus"
     spec:
       containers:
-      - env:
-        - name: APP_NAME
+      - name: todo-backend
+        image: ghcr.io/samidh93/todo-backend:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+          protocol: TCP
+        env:
+        - name: SPRING_PROFILES_ACTIVE
+          value: "development"
+        - name: SPRING_DATASOURCE_URL
+          value: "jdbc:postgresql://todo-postgres:5432/tododb"
+        - name: SPRING_DATASOURCE_USERNAME
           valueFrom:
-            configMapKeyRef:
-              key: app.name
-              name: app-config
-        - name: APP_VERSION
-          valueFrom:
-            configMapKeyRef:
-              key: app.version
-              name: app-config
-        - name: DB_HOST
-          valueFrom:
-            configMapKeyRef:
-              key: db.host
-              name: app-config
-        - name: DB_PASSWORD
+            secretKeyRef:
+              key: db.username
+              name: todo-secrets
+        - name: SPRING_DATASOURCE_PASSWORD
           valueFrom:
             secretKeyRef:
               key: db.password
-              name: app-secrets
-        image: nginx:alpine
-        imagePullPolicy: IfNotPresent
+              name: todo-secrets
+        - name: SERVER_PORT
+          value: "8080"
+        resources:
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+          requests:
+            cpu: "250m"
+            memory: "256Mi"
         livenessProbe:
-          failureThreshold: 3
           httpGet:
-            path: /health
-            port: 80
+            path: /actuator/health
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8080
             scheme: HTTP
           initialDelaySeconds: 30
           periodSeconds: 10
-          successThreshold: 1
-          timeoutSeconds: 1
-        name: app
+          timeoutSeconds: 5
+          failureThreshold: 3
+        volumeMounts:
+        - name: app-logs
+          mountPath: /app/logs
+      volumes:
+      - name: app-logs
+        emptyDir: {}
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: todo-frontend
+  namespace: todo-app
+  labels:
+    app: todo-frontend
+    environment: development
+    version: v1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: todo-frontend
+      environment: development
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: todo-frontend
+        environment: development
+        version: v1
+    spec:
+      containers:
+      - name: todo-frontend
+        image: ghcr.io/samidh93/todo-frontend:latest
+        imagePullPolicy: Always
         ports:
         - containerPort: 80
           protocol: TCP
-        readinessProbe:
-          failureThreshold: 3
-          httpGet:
-            path: /health
-            port: 80
-            scheme: HTTP
-          initialDelaySeconds: 5
-          periodSeconds: 5
-          successThreshold: 1
-          timeoutSeconds: 1
+        env:
+        - name: REACT_APP_API_URL
+          value: "/api"
+        - name: NODE_ENV
+          value: "production"
         resources:
           limits:
-            cpu: 500m
-            memory: 128Mi
+            cpu: "300m"
+            memory: "256Mi"
           requests:
-            cpu: 250m
-            memory: 64Mi
-        terminationMessagePath: /dev/termination-log
-        terminationMessagePolicy: File
-        volumeMounts:
-        - mountPath: /usr/share/nginx/html/data
-          name: app-data
-        - mountPath: /etc/nginx/conf.d
-          name: app-config
-        - mountPath: /etc/app/secrets
-          name: app-secrets
-          readOnly: true
-      - name: nginx-exporter
-        image: nginx/nginx-prometheus-exporter:0.11.0
-        args:
-        - -nginx.scrape-uri=http://localhost/nginx_status
+            cpu: "100m"
+            memory: "128Mi"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 80
+            scheme: HTTP
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 80
+            scheme: HTTP
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: todo-nginx
+  namespace: todo-app
+  labels:
+    app: todo-nginx
+    environment: development
+    version: v1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: todo-nginx
+      environment: development
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: todo-nginx
+        environment: development
+        version: v1
+    spec:
+      containers:
+      - name: todo-nginx
+        image: ghcr.io/samidh93/todo-nginx:latest
+        imagePullPolicy: Always
         ports:
-        - containerPort: 9113
-          name: metrics
+        - containerPort: 80
           protocol: TCP
         resources:
           limits:
-            cpu: 100m
-            memory: 64Mi
+            cpu: "200m"
+            memory: "128Mi"
           requests:
-            cpu: 50m
-            memory: 32Mi
-      dnsPolicy: ClusterFirst
-      restartPolicy: Always
-      schedulerName: default-scheduler
-      securityContext: {}
-      terminationGracePeriodSeconds: 30
-      volumes:
-      - name: app-data
-        persistentVolumeClaim:
-          claimName: app-data-pvc
-      - configMap:
-          defaultMode: 420
-          name: app-config
-        name: app-config
-      - name: app-secrets
-        secret:
-          defaultMode: 420
-          secretName: app-secrets
-status:
-  availableReplicas: 1
-  conditions:
-  - lastTransitionTime: "2025-08-23T19:35:33Z"
-    lastUpdateTime: "2025-08-23T19:35:33Z"
-    message: Deployment has minimum availability.
-    reason: MinimumReplicasAvailable
-    status: "True"
-    type: Available
-  - lastTransitionTime: "2025-08-23T19:35:25Z"
-    lastUpdateTime: "2025-08-23T19:35:33Z"
-    message: ReplicaSet "app-668f576c9c" has successfully progressed.
-    reason: NewReplicaSetAvailable
-    status: "True"
-    type: Progressing
-  observedGeneration: 1
-  readyReplicas: 1
+            cpu: "100m"
+            memory: "64Mi"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 80
+            scheme: HTTP
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 80
+            scheme: HTTP
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: todo-postgres
+  namespace: todo-app
+  labels:
+    app: todo-postgres
+    environment: development
+    version: v1
+spec:
   replicas: 1
-  updatedReplicas: 1
+  selector:
+    matchLabels:
+      app: todo-postgres
+      environment: development
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: todo-postgres
+        environment: development
+        version: v1
+    spec:
+      containers:
+      - name: todo-postgres
+        image: postgres:15-alpine
+        ports:
+        - containerPort: 5432
+          protocol: TCP
+        env:
+        - name: POSTGRES_DB
+          value: "tododb"
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              key: db.username
+              name: todo-secrets
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: db.password
+              name: todo-secrets
+        - name: POSTGRES_INITDB_ARGS
+          value: "--encoding=UTF-8 --lc-collate=C --lc-ctype=C"
+        resources:
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+          requests:
+            cpu: "250m"
+            memory: "256Mi"
+        livenessProbe:
+          exec:
+            command:
+            - pg_isready
+            - -U
+            - postgres
+            - -d
+            - tododb
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+        readinessProbe:
+          exec:
+            command:
+            - pg_isready
+            - -U
+            - postgres
+            - -d
+            - tododb
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        volumeMounts:
+        - name: postgres-data
+          mountPath: /var/lib/postgresql/data
+        - name: init-scripts
+          mountPath: /docker-entrypoint-initdb.d
+      volumes:
+      - name: postgres-data
+        persistentVolumeClaim:
+          claimName: todo-postgres-pvc
+      - name: init-scripts
+        configMap:
+          name: todo-init-scripts

@@ -2,20 +2,18 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
+- namespace.yaml
 - deployment.yaml
 - service.yaml
-- ingress.yaml
-- storage-class.yaml
-- persistent-volume-claim.yaml
 - configmap.yaml
 - secret.yaml
-- monitoring-namespace.yaml
-- prometheus-config.yaml
-- prometheus-deployment.yaml
-- prometheus-service.yaml
-- grafana.yaml
+- postgres-pvc.yaml
+- ingress.yaml
+- init-scripts-configmap.yaml
 
-labels:
-- pairs:
-    app: app
-    version: v1
+commonLabels:
+  app: todo-app
+  environment: development
+  version: v1
+
+namespace: todo-app

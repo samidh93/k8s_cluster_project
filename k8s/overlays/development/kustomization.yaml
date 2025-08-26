@@ -3,12 +3,44 @@ kind: Kustomization
 
 resources:
 - ../../base
-- ../../namespaces
 
 patches:
 - target:
     kind: Deployment
-    name: app
+    name: todo-backend
+  patch: |-
+    - op: replace
+      path: /spec/replicas
+      value: 1
+    - op: add
+      path: /metadata/labels/environment
+      value: development
+
+- target:
+    kind: Deployment
+    name: todo-frontend
+  patch: |-
+    - op: replace
+      path: /spec/replicas
+      value: 1
+    - op: add
+      path: /metadata/labels/environment
+      value: development
+
+- target:
+    kind: Deployment
+    name: todo-nginx
+  patch: |-
+    - op: replace
+      path: /spec/replicas
+      value: 1
+    - op: add
+      path: /metadata/labels/environment
+      value: development
+
+- target:
+    kind: Deployment
+    name: todo-postgres
   patch: |-
     - op: replace
       path: /spec/replicas
@@ -19,3 +51,5 @@ patches:
 
 commonLabels:
   environment: development
+
+namespace: todo-app

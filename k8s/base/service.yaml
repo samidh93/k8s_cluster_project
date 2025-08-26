@@ -1,10 +1,30 @@
+# Backend Service
 apiVersion: v1
 kind: Service
 metadata:
-  name: app
-  namespace: app
+  name: todo-backend
+  namespace: todo-app
   labels:
-    app: app
+    app: todo-backend
+spec:
+  type: ClusterIP
+  ports:
+  - port: 8080
+    targetPort: 8080
+    protocol: TCP
+    name: http
+  selector:
+    app: todo-backend
+
+---
+# Frontend Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: todo-frontend
+  namespace: todo-app
+  labels:
+    app: todo-frontend
 spec:
   type: ClusterIP
   ports:
@@ -13,4 +33,42 @@ spec:
     protocol: TCP
     name: http
   selector:
-    app: app
+    app: todo-frontend
+
+---
+# Nginx Service (Main Entry Point)
+apiVersion: v1
+kind: Service
+metadata:
+  name: todo-nginx
+  namespace: todo-app
+  labels:
+    app: todo-nginx
+spec:
+  type: ClusterIP
+  ports:
+  - port: 80
+    targetPort: 80
+    protocol: TCP
+    name: http
+  selector:
+    app: todo-nginx
+
+---
+# PostgreSQL Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: todo-postgres
+  namespace: todo-app
+  labels:
+    app: todo-postgres
+spec:
+  type: ClusterIP
+  ports:
+  - port: 5432
+    targetPort: 5432
+    protocol: TCP
+    name: postgresql
+  selector:
+    app: todo-postgres
