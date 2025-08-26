@@ -1,0 +1,133 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: todo-app-network-policy
+  namespace: todo-app
+  labels:
+    app: todo-app
+    environment: development
+    version: v1
+spec:
+  podSelector:
+    matchLabels:
+      app: todo-app
+  
+  policyTypes:
+  - Ingress
+  - Egress
+  
+  # Ingress rules - what can connect to our pods
+  ingress:
+  # Allow ingress controller to connect
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: ingress-nginx
+    ports:
+    - protocol: TCP
+      port: 80
+    - protocol: TCP
+      port: 8080
+  
+  # Allow frontend to connect to backend
+  - from:
+    - podSelector:
+        matchLabels:
+          app: todo-nginx
+    ports:
+    - protocol: TCP
+      port: 8080
+  
+  # Allow nginx to connect to frontend
+  - from:
+    - podSelector:
+        matchLabels:
+          app: todo-nginx
+    ports:
+    - protocol: TCP
+      port: 80
+  
+  # Allow backend to connect to database
+  - from:
+    - podSelector:
+        matchLabels:
+          app: todo-backend
+    ports:
+    - protocol: TCP
+      port: 5432
+  
+  # Egress rules - what our pods can connect to
+  egress:
+  # Allow DNS resolution
+  - to:
+    - namespaceSelector: {}
+    ports:
+    - protocol: UDP
+      port: 53
+  
+  # Allow backend to connect to database
+  - to:
+    - podSelector:
+        matchLabels:
+          app: todo-postgres
+    ports:
+    - protocol: TCP
+      port: 5432
+  
+  # Allow nginx to connect to backend
+  - to:
+    - podSelector:
+        matchLabels:
+          app: todo-backend
+    ports:
+    - protocol: TCP
+      port: 8080
+  
+  # Allow nginx to connect to frontend
+  - to:
+    - podSelector:
+        matchLabels:
+          app: todo-frontend
+    ports:
+    - protocol: TCP
+      port: 80
+  
+  # Allow all pods to connect to kube-dns
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: kube-system
+    ports:
+    - protocol: UDP
+      port: 53
+    - protocol: TCP
+      port: 53
+
+---
+# Database network policy (more restrictive)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: todo-database-network-policy
+  namespace: todo-app
+  labels:
+    app: todo-app
+    environment: development
+    version: v1
+spec:
+  podSelector:
+    matchLabels:
+      app: todo-postgres
+  
+  policyTypes:
+  - Ingress
+  
+  # Only allow backend to connect to database
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app: todo-backend
+    ports:
+    - protocol: TCP
+      port: 5432

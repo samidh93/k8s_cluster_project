@@ -1,0 +1,42 @@
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: todo-backend-hpa
+spec:
+  # Production: Aggressive scaling for high availability
+  minReplicas: 3
+  maxReplicas: 15
+  
+  # Production: Fast, responsive scaling
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 180  # 3 minutes (responsive)
+      policies:
+      - type: Percent
+        value: 100
+        periodSeconds: 30
+    scaleUp:
+      stabilizationWindowSeconds: 30   # 30 seconds (very responsive)
+      policies:
+      - type: Percent
+        value: 200
+        periodSeconds: 10
+      - type: Pods
+        value: 3
+        periodSeconds: 10
+  
+  # Production: Sensitive thresholds for quick response
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 60  # Scale up at 60% CPU (early warning)
+  
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 70  # Scale up at 70% Memory (early warning)

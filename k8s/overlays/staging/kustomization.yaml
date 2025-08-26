@@ -59,7 +59,7 @@ patches:
   patch: |-
     - op: replace
       path: /spec/replicas
-      value: 2
+      value: 3
     - op: add
       path: /metadata/labels/environment
       value: staging
@@ -98,6 +98,12 @@ patches:
     - op: replace
       path: /spec/template/spec/containers/0/resources/limits/cpu
       value: "500m"
+
+# HPA patch for staging environment
+- path: hpa-patch.yaml
+  target:
+    kind: HorizontalPodAutoscaler
+    name: todo-backend-hpa
 
 commonLabels:
   environment: staging

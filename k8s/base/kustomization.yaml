@@ -10,6 +10,9 @@ resources:
 - postgres-pvc.yaml
 - ingress.yaml
 - init-scripts-configmap.yaml
+- hpa.yaml
+- advanced-ingress.yaml
+- network-policies.yaml
 
 commonLabels:
   environment: development

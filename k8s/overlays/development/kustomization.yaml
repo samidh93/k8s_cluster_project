@@ -33,10 +33,22 @@ patches:
   patch: |-
     - op: replace
       path: /spec/replicas
-      value: 1
+      value: 2
     - op: add
       path: /metadata/labels/environment
       value: development
+    - op: replace
+      path: /spec/template/spec/containers/0/resources/requests/memory
+      value: "128Mi"
+    - op: replace
+      path: /spec/template/spec/containers/0/resources/requests/cpu
+      value: "100m"
+    - op: replace
+      path: /spec/template/spec/containers/0/resources/limits/memory
+      value: "256Mi"
+    - op: replace
+      path: /spec/template/spec/containers/0/resources/limits/cpu
+      value: "200m"
 
 - target:
     kind: Deployment
@@ -48,6 +60,12 @@ patches:
     - op: add
       path: /metadata/labels/environment
       value: development
+
+# HPA patch for development environment
+- path: hpa-patch.yaml
+  target:
+    kind: HorizontalPodAutoscaler
+    name: todo-backend-hpa
 
 commonLabels:
   environment: development
