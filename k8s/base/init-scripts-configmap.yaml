@@ -5,11 +5,10 @@ metadata:
   namespace: todo-app
   labels:
     app: todo-app
+    environment: development
+    version: v1
 data:
   init.sql: |
-    -- Create database if not exists
-    CREATE DATABASE IF NOT EXISTS tododb;
-    
     -- Create tables
     CREATE TABLE IF NOT EXISTS todos (
         id BIGSERIAL PRIMARY KEY,
@@ -21,17 +20,16 @@ data:
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
-    
+
     -- Create indexes
     CREATE INDEX IF NOT EXISTS idx_todos_completed ON todos(completed);
     CREATE INDEX IF NOT EXISTS idx_todos_priority ON todos(priority);
     CREATE INDEX IF NOT EXISTS idx_todos_created_at ON todos(created_at);
     CREATE INDEX IF NOT EXISTS idx_todos_due_date ON todos(due_date);
-    
+
     -- Insert sample data
     INSERT INTO todos (title, description, priority, due_date) VALUES
         ('Complete Kubernetes Setup', 'Set up local minikube cluster and deploy Todo app', 'HIGH', CURRENT_TIMESTAMP + INTERVAL '7 days'),
         ('Test CI/CD Pipeline', 'Verify GitHub Actions workflow works end-to-end', 'HIGH', CURRENT_TIMESTAMP + INTERVAL '3 days'),
         ('Create Monitoring Dashboards', 'Set up Grafana dashboards for Todo app metrics', 'MEDIUM', CURRENT_TIMESTAMP + INTERVAL '14 days'),
-        ('Document Deployment Process', 'Write deployment guide for team members', 'LOW', CURRENT_TIMESTAMP + INTERVAL '30 days')
-    ON CONFLICT DO NOTHING;
+        ('Document Deployment Process', 'Write deployment guide for team members', 'LOW', CURRENT_TIMESTAMP + INTERVAL '30 days');
