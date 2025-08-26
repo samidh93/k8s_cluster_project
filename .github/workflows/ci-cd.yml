@@ -182,8 +182,8 @@ jobs:
         file: docker/backend.Dockerfile
         push: true
         tags: |
-          ghcr.io/${{ github.repository }}/backend:${{ github.sha }}
-          ghcr.io/${{ github.repository }}/backend:latest
+          ghcr.io/${{ github.repository_owner }}/todo-backend:${{ github.sha }}
+          ghcr.io/${{ github.repository_owner }}/todo-backend:latest
         cache-from: type=gha
         cache-to: type=gha,mode=max
         
@@ -195,8 +195,8 @@ jobs:
         file: docker/frontend.Dockerfile
         push: true
         tags: |
-          ghcr.io/${{ github.repository }}/frontend:${{ github.sha }}
-          ghcr.io/${{ github.repository }}/frontend:latest
+          ghcr.io/${{ github.repository_owner }}/todo-frontend:${{ github.sha }}
+          ghcr.io/${{ github.repository_owner }}/todo-frontend:latest
         cache-from: type=gha
         cache-to: type=gha,mode=max
         
@@ -208,8 +208,8 @@ jobs:
         file: docker/nginx.Dockerfile
         push: true
         tags: |
-          ghcr.io/${{ github.repository }}/nginx:${{ github.sha }}
-          ghcr.io/${{ github.repository }}/nginx:latest
+          ghcr.io/${{ github.repository_owner }}/todo-nginx:${{ github.sha }}
+          ghcr.io/${{ github.repository_owner }}/todo-nginx:latest
         cache-from: type=gha
         cache-to: type=gha,mode=max
 
