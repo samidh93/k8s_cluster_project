@@ -12,7 +12,6 @@ resources:
 - init-scripts-configmap.yaml
 
 commonLabels:
-  app: todo-app
   environment: development
   version: v1
 
