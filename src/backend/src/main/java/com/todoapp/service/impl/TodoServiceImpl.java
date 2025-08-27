@@ -166,7 +166,8 @@ public class TodoServiceImpl implements TodoService {
         long highPriorityTodos = todoRepository.countByPriority(Todo.Priority.HIGH) + 
                                 todoRepository.countByPriority(Todo.Priority.URGENT);
 
-        return new TodoStatistics(totalTodos, completedTodos, incompleteTodos, overdueTodos, highPriorityTodos);
+        return new TodoStatistics(totalTodos, completedTodos, incompleteTodos, overdueTodos,
+                                highPriorityTodos);
     }
 
     @Override

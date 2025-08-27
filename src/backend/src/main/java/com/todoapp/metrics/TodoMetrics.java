@@ -68,14 +68,14 @@ public class TodoMetrics {
         
         // Gauges for current state
         this.activeTodosGauge = new AtomicInteger(0);
-        Gauge.builder("todo_active_todos_total")
+        Gauge.builder("todo_active_todos_total", activeTodosGauge, AtomicInteger::get)
                 .description("Current number of active todos")
-                .register(meterRegistry, activeTodosGauge, AtomicInteger::get);
+                .register(meterRegistry);
                 
         this.activeUsersGauge = new AtomicInteger(0);
-        Gauge.builder("todo_active_users_total")
+        Gauge.builder("todo_active_users_total", activeUsersGauge, AtomicInteger::get)
                 .description("Current number of active users")
-                .register(meterRegistry, activeUsersGauge, AtomicInteger::get);
+                .register(meterRegistry);
     }
     
     // Business metric methods

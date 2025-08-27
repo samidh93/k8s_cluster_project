@@ -111,8 +111,8 @@ public interface TodoService {
         // Constructors
         public TodoStatistics() {}
 
-        public TodoStatistics(long totalTodos, long completedTodos, long incompleteTodos, 
-                           long overdueTodos, long highPriorityTodos) {
+        public TodoStatistics(final long totalTodos, final long completedTodos, final long incompleteTodos, 
+                           final long overdueTodos, final long highPriorityTodos) {
             this.totalTodos = totalTodos;
             this.completedTodos = completedTodos;
             this.incompleteTodos = incompleteTodos;
