@@ -29,6 +29,8 @@ spec:
         prometheus.io/port: "8080"
         prometheus.io/path: "/actuator/prometheus"
     spec:
+      serviceAccountName: todo-backend-sa
+
       containers:
       - name: todo-backend
         image: ghcr.io/samidh93/todo-backend:latest
@@ -113,6 +115,8 @@ spec:
         environment: development
         version: v1
     spec:
+      serviceAccountName: todo-frontend-sa
+
       containers:
       - name: todo-frontend
         image: ghcr.io/samidh93/todo-frontend:latest
@@ -179,6 +183,8 @@ spec:
         environment: development
         version: v1
     spec:
+      serviceAccountName: todo-nginx-sa
+
       containers:
       - name: todo-nginx
         image: ghcr.io/samidh93/todo-nginx:latest
@@ -240,6 +246,8 @@ spec:
         environment: development
         version: v1
     spec:
+      serviceAccountName: todo-postgres-sa
+
       containers:
       - name: todo-postgres
         image: postgres:15-alpine

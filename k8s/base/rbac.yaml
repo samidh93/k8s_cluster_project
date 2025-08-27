@@ -1,0 +1,183 @@
+# Service Accounts for each component
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: todo-backend-sa
+  namespace: todo-app
+  labels:
+    app: todo-backend
+    environment: development
+    version: v1
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: todo-frontend-sa
+  namespace: todo-app
+  labels:
+    app: todo-frontend
+    environment: development
+    version: v1
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: todo-nginx-sa
+  namespace: todo-app
+  labels:
+    app: todo-nginx
+    environment: development
+    version: v1
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: todo-postgres-sa
+  namespace: todo-app
+  labels:
+    app: todo-postgres
+    environment: development
+    version: v1
+---
+# Roles for each component
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: todo-backend-role
+  namespace: todo-app
+  labels:
+    app: todo-backend
+    environment: development
+    version: v1
+rules:
+# Backend can read/write todos via API
+- apiGroups: [""]
+  resources: ["configmaps", "secrets"]
+  resourceNames: ["todo-config", "todo-secrets"]
+  verbs: ["get"]
+# Backend can read its own logs
+- apiGroups: [""]
+  resources: ["pods/logs"]
+  resourceNames: ["todo-backend-*"]
+  verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: todo-frontend-role
+  namespace: todo-app
+  labels:
+    app: todo-frontend
+    environment: development
+    version: v1
+rules:
+# Frontend can read config (but not secrets)
+- apiGroups: [""]
+  resources: ["configmaps"]
+  resourceNames: ["todo-config"]
+  verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: todo-nginx-role
+  namespace: todo-app
+  labels:
+    app: todo-nginx
+    environment: development
+    version: v1
+rules:
+# Nginx can read config for routing
+- apiGroups: [""]
+  resources: ["configmaps"]
+  resourceNames: ["todo-config"]
+  verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: todo-postgres-role
+  namespace: todo-app
+  labels:
+    app: todo-postgres
+    environment: development
+    version: v1
+rules:
+# Database has minimal permissions - only access its own PVC
+- apiGroups: [""]
+  resources: ["persistentvolumeclaims"]
+  resourceNames: ["todo-postgres-pvc"]
+  verbs: ["get"]
+---
+# Role Bindings - Connect Service Accounts to Roles
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: todo-backend-rb
+  namespace: todo-app
+  labels:
+    app: todo-backend
+    environment: development
+    version: v1
+subjects:
+- kind: ServiceAccount
+  name: todo-backend-sa
+  namespace: todo-app
+roleRef:
+  kind: Role
+  name: todo-backend-role
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: todo-frontend-rb
+  namespace: todo-app
+  labels:
+    app: todo-frontend
+    environment: development
+    version: v1
+subjects:
+- kind: ServiceAccount
+  name: todo-frontend-sa
+  namespace: todo-app
+roleRef:
+  kind: Role
+  name: todo-frontend-role
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: todo-nginx-rb
+  namespace: todo-app
+  labels:
+    app: todo-nginx
+    environment: development
+    version: v1
+subjects:
+- kind: ServiceAccount
+  name: todo-nginx-sa
+  namespace: todo-app
+roleRef:
+  kind: Role
+  name: todo-nginx-role
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: todo-postgres-rb
+  namespace: todo-app
+  labels:
+    app: todo-postgres
+    environment: development
+    version: v1
+subjects:
+- kind: ServiceAccount
+  name: todo-postgres-sa
+  namespace: todo-app
+roleRef:
+  kind: Role
+  name: todo-postgres-role
+  apiGroup: rbac.authorization.k8s.io
