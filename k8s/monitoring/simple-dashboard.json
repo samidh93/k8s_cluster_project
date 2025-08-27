@@ -1,0 +1,16 @@
+{
+  "dashboard": {
+    "title": "Simple Todo Dashboard",
+    "panels": [
+      {
+        "title": "Pod Status",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "count(kube_pod_status_phase{namespace=\"todo-app\"}) by (phase)"
+          }
+        ]
+      }
+    ]
+  }
+}
