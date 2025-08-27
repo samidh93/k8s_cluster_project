@@ -15,6 +15,7 @@ resources:
 - network-policies.yaml
 - rbac.yaml
 - enhanced-secrets.yaml
+- backup/
 
 commonLabels:
   environment: development

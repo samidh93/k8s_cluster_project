@@ -1,0 +1,229 @@
+# Job for backing up application state (configs, secrets, metadata)
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: todo-application-backup
+  namespace: todo-app
+  labels:
+    app: todo-app
+    purpose: backup
+    environment: development
+    version: v1
+spec:
+  template:
+    metadata:
+      labels:
+        app: todo-app
+        purpose: backup
+        environment: development
+        version: v1
+    spec:
+      serviceAccountName: todo-backup-sa
+      restartPolicy: Never
+      containers:
+      - name: application-backup
+        image: bitnami/kubectl:latest
+        command:
+        - /bin/bash
+        - -c
+        - |
+          # Set timestamp for backup
+          TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+          BACKUP_DIR="/backup-storage/app-backup-${TIMESTAMP}"
+          
+          # Create backup directory
+          mkdir -p ${BACKUP_DIR}
+          
+          echo "Starting application state backup at $(date)"
+          
+          # Backup ConfigMaps
+          echo "Backing up ConfigMaps..."
+          kubectl get configmaps -n todo-app -o yaml > ${BACKUP_DIR}/configmaps.yaml
+          
+          # Backup Secrets (without sensitive data)
+          echo "Backing up Secrets metadata..."
+          kubectl get secrets -n todo-app -o yaml > ${BACKUP_DIR}/secrets-metadata.yaml
+          
+          # Backup Deployments
+          echo "Backing up Deployments..."
+          kubectl get deployments -n todo-app -o yaml > ${BACKUP_DIR}/deployments.yaml
+          
+          # Backup Services
+          echo "Backing up Services..."
+          kubectl get services -n todo-app -o yaml > ${BACKUP_DIR}/services.yaml
+          
+          # Backup PVCs
+          echo "Backing up PVCs..."
+          kubectl get pvc -n todo-app -o yaml > ${BACKUP_DIR}/pvc.yaml
+          
+          # Backup Network Policies
+          echo "Backing up Network Policies..."
+          kubectl get networkpolicies -n todo-app -o yaml > ${BACKUP_DIR}/network-policies.yaml
+          
+          # Backup RBAC
+          echo "Backing up RBAC..."
+          kubectl get roles,rolebindings,serviceaccounts -n todo-app -o yaml > ${BACKUP_DIR}/rbac.yaml
+          
+          # Backup Ingress
+          echo "Backing up Ingress..."
+          kubectl get ingress -n todo-app -o yaml > ${BACKUP_DIR}/ingress.yaml
+          
+          # Create backup manifest
+          cat > ${BACKUP_DIR}/backup-manifest.yaml << EOF
+          apiVersion: v1
+          kind: ConfigMap
+          metadata:
+            name: todo-backup-manifest-${TIMESTAMP}
+            namespace: todo-app
+            labels:
+              app: todo-app
+              purpose: backup
+              timestamp: ${TIMESTAMP}
+          data:
+            backup-timestamp: "${TIMESTAMP}"
+            backup-type: "application-state"
+            backup-contents: |
+              - ConfigMaps
+              - Secrets Metadata
+              - Deployments
+              - Services
+              - PVCs
+              - Network Policies
+              - RBAC
+              - Ingress
+            backup-size: "$(du -sh ${BACKUP_DIR} | cut -f1)"
+          EOF
+          
+          # Compress backup directory
+          cd /backup-storage
+          tar -czf app-backup-${TIMESTAMP}.tar.gz app-backup-${TIMESTAMP}/
+          
+          # Clean up uncompressed directory
+          rm -rf app-backup-${TIMESTAMP}
+          
+          echo "Application state backup completed: app-backup-${TIMESTAMP}.tar.gz"
+          echo "Backup size: $(du -h app-backup-${TIMESTAMP}.tar.gz | cut -f1)"
+          
+          # List backup contents
+          echo "Backup contents:"
+          tar -tzf app-backup-${TIMESTAMP}.tar.gz | head -20
+          
+          echo "Application state backup completed successfully"
+        env:
+        - name: KUBECONFIG
+          value: "/var/run/secrets/kubernetes.io/serviceaccount"
+        volumeMounts:
+        - name: backup-storage
+          mountPath: /backup-storage
+        resources:
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+          requests:
+            cpu: "250m"
+            memory: "256Mi"
+      volumes:
+      - name: backup-storage
+        persistentVolumeClaim:
+          claimName: todo-backup-pvc
+---
+# CronJob for scheduled application state backups
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: todo-application-backup-scheduled
+  namespace: todo-app
+  labels:
+    app: todo-app
+    purpose: backup
+    environment: development
+    version: v1
+spec:
+  schedule: "0 3 * * *"  # Daily at 3 AM (after database backup)
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 7
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: todo-app
+            purpose: backup
+            environment: development
+            version: v1
+        spec:
+          serviceAccountName: todo-backup-sa
+          restartPolicy: Never
+          containers:
+          - name: application-backup
+            image: bitnami/kubectl:latest
+            command:
+            - /bin/bash
+            - -c
+            - |
+              # Set timestamp for backup
+              TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+              BACKUP_DIR="/backup-storage/app-backup-${TIMESTAMP}"
+              
+              # Create backup directory
+              mkdir -p ${BACKUP_DIR}
+              
+              echo "Starting scheduled application state backup at $(date)"
+              
+              # Backup all resources
+              kubectl get all -n todo-app -o yaml > ${BACKUP_DIR}/all-resources.yaml
+              kubectl get configmaps,secrets,pvc,networkpolicies,roles,rolebindings,serviceaccounts,ingress -n todo-app -o yaml > ${BACKUP_DIR}/k8s-resources.yaml
+              
+              # Create backup manifest
+              cat > ${BACKUP_DIR}/backup-manifest.yaml << EOF
+              apiVersion: v1
+              kind: ConfigMap
+              metadata:
+                name: todo-scheduled-backup-manifest-${TIMESTAMP}
+                namespace: todo-app
+                labels:
+                  app: todo-app
+                  purpose: backup
+                  timestamp: ${TIMESTAMP}
+              data:
+                backup-timestamp: "${TIMESTAMP}"
+                backup-type: "scheduled-application-state"
+                backup-contents: |
+                  - All Kubernetes Resources
+                  - ConfigMaps and Secrets
+                  - Deployments and Services
+                  - PVCs and Network Policies
+                  - RBAC Configuration
+                  - Ingress Rules
+                backup-size: "$(du -sh ${BACKUP_DIR} | cut -f1)"
+              EOF
+              
+              # Compress backup directory
+              cd /backup-storage
+              tar -czf scheduled-app-backup-${TIMESTAMP}.tar.gz app-backup-${TIMESTAMP}/
+              
+              # Clean up uncompressed directory
+              rm -rf app-backup-${TIMESTAMP}
+              
+              echo "Scheduled application state backup completed: scheduled-app-backup-${TIMESTAMP}.tar.gz"
+              echo "Backup size: $(du -h scheduled-app-backup-${TIMESTAMP}.tar.gz | cut -f1)"
+              
+              echo "Scheduled application state backup completed successfully"
+            env:
+            - name: KUBECONFIG
+              value: "/var/run/secrets/kubernetes.io/serviceaccount"
+            volumeMounts:
+            - name: backup-storage
+              mountPath: /backup-storage
+            resources:
+              limits:
+                cpu: "500m"
+                memory: "512Mi"
+              requests:
+                cpu: "250m"
+                memory: "256Mi"
+          volumes:
+          - name: backup-storage
+            persistentVolumeClaim:
+              claimName: todo-backup-pvc

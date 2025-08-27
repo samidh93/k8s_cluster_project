@@ -1,0 +1,67 @@
+# Service Account for backup operations
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: todo-backup-sa
+  namespace: todo-app
+  labels:
+    app: todo-app
+    purpose: backup
+    environment: development
+    version: v1
+---
+# Role for backup operations
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: todo-backup-role
+  namespace: todo-app
+  labels:
+    app: todo-app
+    purpose: backup
+    environment: development
+    version: v1
+rules:
+# Can read secrets for database credentials
+- apiGroups: [""]
+  resources: ["secrets"]
+  resourceNames: ["todo-secrets"]
+  verbs: ["get"]
+# Can read configmaps for application configuration
+- apiGroups: [""]
+  resources: ["configmaps"]
+  resourceNames: ["todo-config"]
+  verbs: ["get"]
+# Can read PVCs for backup storage
+- apiGroups: [""]
+  resources: ["persistentvolumeclaims"]
+  resourceNames: ["todo-backup-pvc"]
+  verbs: ["get", "list"]
+# Can create and manage volume snapshots
+- apiGroups: ["snapshot.storage.k8s.io"]
+  resources: ["volumesnapshots"]
+  verbs: ["get", "list", "create", "delete"]
+# Can read volume snapshot classes
+- apiGroups: ["snapshot.storage.k8s.io"]
+  resources: ["volumesnapshotclasses"]
+  verbs: ["get", "list"]
+---
+# Role Binding for backup service account
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: todo-backup-rb
+  namespace: todo-app
+  labels:
+    app: todo-app
+    purpose: backup
+    environment: development
+    version: v1
+subjects:
+- kind: ServiceAccount
+  name: todo-backup-sa
+  namespace: todo-app
+roleRef:
+  kind: Role
+  name: todo-backup-role
+  apiGroup: rbac.authorization.k8s.io

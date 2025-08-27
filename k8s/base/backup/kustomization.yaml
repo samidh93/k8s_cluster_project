@@ -1,0 +1,17 @@
+# Kustomization for Backup & Disaster Recovery resources
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: todo-app
+
+resources:
+- backup-storage-pvc.yaml
+- backup-rbac.yaml
+- database-backup-cronjob.yaml
+- application-backup-job.yaml
+
+commonLabels:
+  app: todo-app
+  purpose: backup
+  environment: development
+  version: v1

@@ -1,0 +1,44 @@
+# PVC for storing database backups and application state
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: todo-backup-pvc
+  namespace: todo-app
+  labels:
+    app: todo-app
+    purpose: backup
+    environment: development
+    version: v1
+  annotations:
+    backup.kubernetes.io/retention: "30d"
+    backup.kubernetes.io/compression: "gzip"
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi  # Larger storage for backups
+  storageClassName: standard
+---
+# Production backup storage with larger capacity
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: todo-production-backup-pvc
+  namespace: todo-app
+  labels:
+    app: todo-app
+    purpose: backup
+    environment: production
+    version: v1
+  annotations:
+    backup.kubernetes.io/retention: "90d"
+    backup.kubernetes.io/compression: "gzip"
+    backup.kubernetes.io/encryption: "true"
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 50Gi  # Much larger storage for production backups
+  storageClassName: standard

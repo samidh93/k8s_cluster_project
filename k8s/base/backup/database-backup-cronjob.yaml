@@ -1,0 +1,185 @@
+# CronJob for automated PostgreSQL database backups
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: todo-database-backup
+  namespace: todo-app
+  labels:
+    app: todo-app
+    purpose: backup
+    environment: development
+    version: v1
+spec:
+  schedule: "0 2 * * *"  # Daily at 2 AM
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 7
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: todo-app
+            purpose: backup
+            environment: development
+            version: v1
+        spec:
+          serviceAccountName: todo-backup-sa
+          restartPolicy: OnFailure
+          containers:
+          - name: database-backup
+            image: postgres:15-alpine
+            command:
+            - /bin/sh
+            - -c
+            - |
+              # Set timestamp for backup file
+              TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+              BACKUP_FILE="tododb_backup_${TIMESTAMP}.sql"
+              
+              # Create backup directory
+              mkdir -p /backups
+              
+              # Perform database backup
+              echo "Starting database backup at $(date)"
+              pg_dump -h todo-postgres -U postgres -d tododb > /backups/${BACKUP_FILE}
+              
+              # Compress backup
+              gzip /backups/${BACKUP_FILE}
+              
+              # Copy to persistent backup storage
+              cp /backups/${BACKUP_FILE}.gz /backup-storage/
+              
+              # Clean up local files
+              rm -rf /backups
+              
+              echo "Database backup completed: ${BACKUP_FILE}.gz"
+              echo "Backup size: $(du -h /backup-storage/${BACKUP_FILE}.gz | cut -f1)"
+              
+              # Verify backup integrity
+              echo "Verifying backup integrity..."
+              gunzip -c /backup-storage/${BACKUP_FILE}.gz | head -n 5
+              
+              echo "Backup verification completed successfully"
+            env:
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: todo-secrets
+                  key: db.password
+            - name: PGPORT
+              value: "5432"
+            - name: PGDATABASE
+              value: "tododb"
+            - name: PGUSER
+              value: "postgres"
+            - name: PGHOST
+              value: "todo-postgres"
+            volumeMounts:
+            - name: backup-storage
+              mountPath: /backup-storage
+            resources:
+              limits:
+                cpu: "500m"
+                memory: "512Mi"
+              requests:
+                cpu: "250m"
+                memory: "256Mi"
+          volumes:
+          - name: backup-storage
+            persistentVolumeClaim:
+              claimName: todo-backup-pvc
+---
+# CronJob for production with more frequent backups
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: todo-production-database-backup
+  namespace: todo-app
+  labels:
+    app: todo-app
+    purpose: backup
+    environment: production
+    version: v1
+spec:
+  schedule: "0 */6 * * *"  # Every 6 hours
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 14
+  failedJobsHistoryLimit: 5
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: todo-app
+            purpose: backup
+            environment: production
+            version: v1
+        spec:
+          serviceAccountName: todo-backup-sa
+          restartPolicy: OnFailure
+          containers:
+          - name: database-backup
+            image: postgres:15-alpine
+            command:
+            - /bin/sh
+            - -c
+            - |
+              # Set timestamp for backup file
+              TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+              BACKUP_FILE="tododb_prod_backup_${TIMESTAMP}.sql"
+              
+              # Create backup directory
+              mkdir -p /backups
+              
+              # Perform database backup with additional options
+              echo "Starting production database backup at $(date)"
+              pg_dump -h todo-postgres -U postgres -d tododb \
+                --verbose --clean --create --if-exists \
+                --no-owner --no-privileges > /backups/${BACKUP_FILE}
+              
+              # Compress backup
+              gzip /backups/${BACKUP_FILE}
+              
+              # Copy to persistent backup storage
+              cp /backups/${BACKUP_FILE}.gz /backup-storage/
+              
+              # Clean up local files
+              rm -rf /backups
+              
+              echo "Production database backup completed: ${BACKUP_FILE}.gz"
+              echo "Backup size: $(du -h /backup-storage/${BACKUP_FILE}.gz | cut -f1)"
+              
+              # Verify backup integrity
+              echo "Verifying backup integrity..."
+              gunzip -c /backup-storage/${BACKUP_FILE}.gz | head -n 5
+              
+              echo "Production backup verification completed successfully"
+            env:
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: todo-secrets
+                  key: db.password
+            - name: PGPORT
+              value: "5432"
+            - name: PGDATABASE
+              value: "tododb"
+            - name: PGUSER
+              value: "postgres"
+            - name: PGHOST
+              value: "todo-postgres"
+            volumeMounts:
+            - name: backup-storage
+              mountPath: /backup-storage
+            resources:
+              limits:
+                cpu: "1"
+                memory: "1Gi"
+              requests:
+                cpu: "500m"
+                memory: "512Mi"
+          volumes:
+          - name: backup-storage
+            persistentVolumeClaim:
+              claimName: todo-backup-pvc
