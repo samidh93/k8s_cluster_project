@@ -1,0 +1,153 @@
+# Canary Deployment Configuration
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: todo-backend-canary
+  namespace: todo-app
+  labels:
+    app: todo-backend
+    version: canary
+    environment: development
+    purpose: canary-deployment
+spec:
+  replicas: 1  # Start with minimal replicas
+  selector:
+    matchLabels:
+      app: todo-backend
+      version: canary
+  template:
+    metadata:
+      labels:
+        app: todo-backend
+        version: canary
+        environment: development
+        purpose: canary-deployment
+      annotations:
+        # Canary-specific annotations
+        canary.kubernetes.io/weight: "10"  # 10% traffic
+        canary.kubernetes.io/phase: "testing"
+    spec:
+      serviceAccountName: todo-backend-sa
+      containers:
+      - name: todo-backend
+        image: ghcr.io/samidh93/todo-backend:latest
+        ports:
+        - containerPort: 8080
+        env:
+        - name: SPRING_PROFILES_ACTIVE
+          value: "development"
+        - name: DB_HOST
+          value: "todo-postgres"
+        - name: DB_PORT
+          value: "5432"
+        - name: DB_NAME
+          value: "tododb"
+        - name: DB_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: todo-secrets
+              key: db.username
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: todo-secrets
+              key: db.password
+        resources:
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+          requests:
+            cpu: "250m"
+            memory: "256Mi"
+        livenessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8080
+          initialDelaySeconds: 60
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+---
+# Canary Frontend Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: todo-frontend-canary
+  namespace: todo-app
+  labels:
+    app: todo-frontend
+    version: canary
+    environment: development
+    purpose: canary-deployment
+spec:
+  replicas: 1  # Start with minimal replicas
+  selector:
+    matchLabels:
+      app: todo-frontend
+      version: canary
+  template:
+    metadata:
+      labels:
+        app: todo-frontend
+        version: canary
+        environment: development
+        purpose: canary-deployment
+      annotations:
+        canary.kubernetes.io/weight: "10"  # 10% traffic
+        canary.kubernetes.io/phase: "testing"
+    spec:
+      serviceAccountName: todo-frontend-sa
+      containers:
+      - name: todo-frontend
+        image: ghcr.io/samidh93/todo-frontend:latest
+        ports:
+        - containerPort: 80
+        resources:
+          limits:
+            cpu: "250m"
+            memory: "256Mi"
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 30
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 10
+          periodSeconds: 10
+---
+# Canary Service for Traffic Splitting
+apiVersion: v1
+kind: Service
+metadata:
+  name: todo-canary-service
+  namespace: todo-app
+  labels:
+    app: todo-app
+    purpose: canary-deployment
+    environment: development
+    version: v1
+  annotations:
+    canary.kubernetes.io/enabled: "true"
+    canary.kubernetes.io/weight: "10"
+    canary.kubernetes.io/phase: "testing"
+spec:
+  type: ClusterIP
+  ports:
+  - port: 8080
+    targetPort: 8080
+    protocol: TCP
+    name: http
+  selector:
+    app: todo-backend
+    version: canary

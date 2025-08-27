@@ -1,0 +1,110 @@
+# Rollback Strategy Configuration
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: todo-backend-with-rollback
+  namespace: todo-app
+  labels:
+    app: todo-backend
+    environment: development
+    version: v1
+    purpose: rollback-strategy
+  annotations:
+    # Rollback configuration
+    rollback.kubernetes.io/strategy: "automatic"
+    rollback.kubernetes.io/max-revision-history: "10"
+    rollback.kubernetes.io/health-check-path: "/actuator/health"
+    rollback.kubernetes.io/failure-threshold: "3"
+    rollback.kubernetes.io/rollback-delay: "60s"
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1        # Maximum number of pods that can be created above desired replicas
+      maxUnavailable: 0  # Maximum number of pods that can be unavailable during update
+  selector:
+    matchLabels:
+      app: todo-backend
+      environment: development
+  template:
+    metadata:
+      labels:
+        app: todo-backend
+        environment: development
+        version: v1
+        purpose: rollback-strategy
+    spec:
+      serviceAccountName: todo-backend-sa
+      containers:
+      - name: todo-backend
+        image: ghcr.io/samidh93/todo-backend:latest
+        ports:
+        - containerPort: 8080
+        env:
+        - name: SPRING_PROFILES_ACTIVE
+          value: "development"
+        - name: DB_HOST
+          value: "todo-postgres"
+        - name: DB_PORT
+          value: "5432"
+        - name: DB_NAME
+          value: "tododb"
+        - name: DB_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: todo-secrets
+              key: db.username
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: todo-secrets
+              key: db.password
+        resources:
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+          requests:
+            cpu: "250m"
+            memory: "256Mi"
+        livenessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8080
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          failureThreshold: 3
+          timeoutSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          failureThreshold: 3
+          timeoutSeconds: 5
+---
+# Rollback Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: todo-rollback-service
+  namespace: todo-app
+  labels:
+    app: todo-app
+    purpose: rollback-strategy
+    environment: development
+    version: v1
+  annotations:
+    rollback.kubernetes.io/enabled: "true"
+    rollback.kubernetes.io/health-check-path: "/actuator/health"
+spec:
+  type: ClusterIP
+  ports:
+  - port: 8080
+    targetPort: 8080
+    protocol: TCP
+    name: http
+  selector:
+    app: todo-backend
+    environment: development

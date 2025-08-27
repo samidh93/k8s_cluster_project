@@ -1,0 +1,17 @@
+# Kustomization for Advanced Deployment Strategies
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: todo-app
+
+resources:
+- blue-green-deployments.yaml
+- blue-green-service.yaml
+- canary-deployment.yaml
+- rollback-strategy.yaml
+
+commonLabels:
+  app: todo-app
+  purpose: advanced-deployments
+  environment: development
+  version: v1

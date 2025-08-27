@@ -1,0 +1,53 @@
+# Blue-Green Deployment Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: todo-blue-green-service
+  namespace: todo-app
+  labels:
+    app: todo-app
+    purpose: blue-green-deployment
+    environment: development
+    version: v1
+  annotations:
+    # Service selector annotation for blue-green switching
+    blue-green.kubernetes.io/active-deployment: "blue"
+    blue-green.kubernetes.io/strategy: "rolling"
+    blue-green.kubernetes.io/health-check-path: "/actuator/health"
+spec:
+  type: ClusterIP
+  ports:
+  - port: 8080
+    targetPort: 8080
+    protocol: TCP
+    name: http
+  selector:
+    # This will be dynamically updated during blue-green deployments
+    app: todo-backend
+    version: blue
+---
+# Blue-Green Frontend Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: todo-frontend-blue-green-service
+  namespace: todo-app
+  labels:
+    app: todo-app
+    purpose: blue-green-deployment
+    environment: development
+    version: v1
+  annotations:
+    blue-green.kubernetes.io/active-deployment: "blue"
+    blue-green.kubernetes.io/strategy: "rolling"
+    blue-green.kubernetes.io/health-check-path: "/"
+spec:
+  type: ClusterIP
+  ports:
+  - port: 80
+    targetPort: 80
+    protocol: TCP
+    name: http
+  selector:
+    app: todo-frontend
+    version: blue

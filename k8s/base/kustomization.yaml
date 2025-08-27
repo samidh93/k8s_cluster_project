@@ -16,6 +16,7 @@ resources:
 - rbac.yaml
 - enhanced-secrets.yaml
 - backup/
+- advanced-deployments/
 
 commonLabels:
   environment: development
