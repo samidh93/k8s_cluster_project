@@ -1,0 +1,46 @@
+{{- if .Values.backend.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "todo-app.name" . }}-backend
+  namespace: {{ .Values.global.environment }}-todo-app
+  labels:
+    {{- include "todo-app.labels" . | nindent 4 }}
+    app: todo-backend
+    component: backend
+spec:
+  replicas: {{ .Values.backend.replicas | default 1 }}
+  selector:
+    matchLabels:
+      app: todo-backend
+      component: backend
+  template:
+    metadata:
+      labels:
+        {{- include "todo-app.labels" . | nindent 8 }}
+        app: todo-backend
+        component: backend
+    spec:
+      containers:
+      - name: backend
+        image: {{ include "todo-app.backendImage" . }}
+        imagePullPolicy: {{ .Values.backend.image.pullPolicy }}
+        ports:
+        - containerPort: 8080
+          name: http
+        env:
+        {{- range $key, $value := .Values.backend.env }}
+        - name: {{ $key }}
+          value: {{ $value | quote }}
+        {{- end }}
+        resources:
+          {{- toYaml .Values.backend.resources | nindent 10 }}
+        {{- if .Values.backend.livenessProbe }}
+        livenessProbe:
+          {{- toYaml .Values.backend.livenessProbe | nindent 10 }}
+        {{- end }}
+        {{- if .Values.backend.readinessProbe }}
+        readinessProbe:
+          {{- toYaml .Values.backend.readinessProbe | nindent 10 }}
+        {{- end }}
+{{- end }}

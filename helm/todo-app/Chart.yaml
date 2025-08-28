@@ -1,0 +1,21 @@
+apiVersion: v2
+name: todo-app
+description: A production-grade Todo application with React frontend, Spring Boot backend, and PostgreSQL
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+keywords:
+  - todo
+  - react
+  - spring-boot
+  - postgresql
+  - kubernetes
+home: https://github.com/samidh93/kubernetes
+sources:
+  - https://github.com/samidh93/kubernetes
+maintainers:
+  - name: Sami
+    email: sami@example.com
+kubeVersion: ">=1.20.0-0"
+annotations:
+  argocd.argoproj.io/sync-options: Prune=true,PrunePropagationPolicy=foreground

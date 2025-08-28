@@ -1,0 +1,21 @@
+{{- if .Values.postgres.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "todo-app.name" . }}-postgres
+  namespace: {{ .Values.global.environment }}-todo-app
+  labels:
+    {{- include "todo-app.labels" . | nindent 4 }}
+    app: todo-postgres
+    component: database
+spec:
+  type: {{ .Values.postgres.service.type }}
+  ports:
+  - port: {{ .Values.postgres.service.port }}
+    targetPort: {{ .Values.postgres.service.targetPort }}
+    protocol: TCP
+    name: postgres
+  selector:
+    app: todo-postgres
+    component: database
+{{- end }}

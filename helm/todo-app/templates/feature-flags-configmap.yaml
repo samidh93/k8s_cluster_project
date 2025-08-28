@@ -1,0 +1,46 @@
+{{- if .Values.featureFlags.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "todo-app.name" . }}-feature-flags
+  namespace: {{ .Values.global.environment }}-todo-app
+  labels:
+    {{- include "todo-app.labels" . | nindent 4 }}
+  annotations:
+    argocd.argoproj.io/sync-options: Prune=true
+data:
+  feature-flags.yaml: |
+    features:
+      newTodoUI: {{ .Values.featureFlags.newTodoUI | quote }}
+      advancedSearch: {{ .Values.featureFlags.advancedSearch | quote }}
+      darkMode: {{ .Values.featureFlags.darkMode | quote }}
+      notifications: {{ .Values.featureFlags.notifications | quote }}
+      
+    # Feature flag metadata
+    metadata:
+      version: {{ .Values.app.version }}
+      environment: {{ .Values.global.environment }}
+      lastUpdated: {{ now | quote }}
+      
+    # Feature flag rules and conditions
+    rules:
+      newTodoUI:
+        enabled: {{ .Values.featureFlags.newTodoUI | quote }}
+        rolloutPercentage: 100
+        userGroups: ["all"]
+        
+      advancedSearch:
+        enabled: {{ .Values.featureFlags.advancedSearch | quote }}
+        rolloutPercentage: 100
+        userGroups: ["all"]
+        
+      darkMode:
+        enabled: {{ .Values.featureFlags.darkMode | quote }}
+        rolloutPercentage: 100
+        userGroups: ["all"]
+        
+      notifications:
+        enabled: {{ .Values.featureFlags.notifications | quote }}
+        rolloutPercentage: 0
+        userGroups: ["beta-testers"]
+{{- end }}

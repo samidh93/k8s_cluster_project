@@ -1,0 +1,91 @@
+# Production environment values
+# Override default values for production
+
+global:
+  environment: production
+  imagePullPolicy: Always  # Always pull latest images in prod
+
+app:
+  replicas:
+    frontend: 3
+    backend: 3
+    nginx: 3
+    postgres: 1  # Keep single postgres instance
+
+backend:
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+    requests:
+      cpu: 500m
+      memory: 512Mi
+  livenessProbe:
+    initialDelaySeconds: 120
+    periodSeconds: 30
+    timeoutSeconds: 15
+    failureThreshold: 2  # More aggressive in prod
+  readinessProbe:
+    initialDelaySeconds: 60
+    periodSeconds: 10
+    timeoutSeconds: 10
+    failureThreshold: 2
+
+nginx:
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 200m
+      memory: 256Mi
+
+postgres:
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 2Gi
+    requests:
+      cpu: 500m
+      memory: 1Gi
+  persistence:
+    size: 50Gi  # Larger storage for production
+
+hpa:
+  backend:
+    minReplicas: 2
+    maxReplicas: 20  # More aggressive scaling for prod
+    targetCPUUtilizationPercentage: 60  # More conservative
+    targetMemoryUtilizationPercentage: 70
+
+monitoring:
+  enabled: true
+  prometheus:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+  grafana:
+    enabled: true
+    dashboards:
+      enabled: true
+
+security:
+  podSecurityStandards:
+    level: restricted  # Most restrictive for production
+  networkPolicies:
+    enabled: true
+
+backup:
+  enabled: true
+  database:
+    schedule: "0 1 * * *"  # Daily at 1 AM (earlier for prod)
+    retention: 30  # Keep for 30 days
+  application:
+    schedule: "0 2 * * *"  # Daily at 2 AM
+    retention: 90  # Keep for 90 days
+
+featureFlags:
+  newTodoUI: false   # Disable new features in prod initially
+  advancedSearch: false
+  darkMode: false
+  notifications: false

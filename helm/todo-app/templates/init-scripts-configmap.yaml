@@ -1,0 +1,73 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "todo-app.name" . }}-init-scripts
+  namespace: {{ .Values.global.environment }}-todo-app
+  labels:
+    {{- include "todo-app.labels" . | nindent 4 }}
+    app: todo-app
+    component: database
+data:
+  init.sql: |
+    -- Todo Application Database Schema
+    -- This script ensures proper enum values and constraints from the start
+    
+    -- Drop existing table if it exists (for clean deployments)
+    DROP TABLE IF EXISTS todos CASCADE;
+    
+    -- Create the todos table with proper constraints
+    CREATE TABLE todos (
+        id BIGSERIAL PRIMARY KEY,
+        title VARCHAR(255) NOT NULL,
+        description TEXT,
+        completed BOOLEAN DEFAULT FALSE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        due_date TIMESTAMP,
+        priority VARCHAR(20) DEFAULT 'MEDIUM' CHECK (priority IN ('LOW', 'MEDIUM', 'HIGH'))
+    );
+    
+    -- Create indexes for better performance
+    CREATE INDEX idx_todos_completed ON todos(completed);
+    CREATE INDEX idx_todos_created_at ON todos(created_at);
+    CREATE INDEX idx_todos_due_date ON todos(due_date);
+    CREATE INDEX idx_todos_priority ON todos(priority);
+    
+    -- Insert sample data with CORRECT enum values
+    INSERT INTO todos (title, description, completed, priority) VALUES
+        ('Learn Kubernetes', 'Study Kubernetes fundamentals and deployment strategies', false, 'HIGH'),
+        ('Build Todo App', 'Create a full-stack todo application with React and Spring Boot', false, 'HIGH'),
+        ('Implement GitOps', 'Set up ArgoCD and GitOps workflow', true, 'MEDIUM'),
+        ('Write Documentation', 'Document all phases and implementation details', false, 'MEDIUM'),
+        ('Test Application', 'Perform comprehensive testing of all features', false, 'LOW')
+    ON CONFLICT DO NOTHING;
+    
+    -- Create function to update updated_at timestamp
+    CREATE OR REPLACE FUNCTION update_updated_at_column()
+    RETURNS TRIGGER AS $$
+    BEGIN
+        NEW.updated_at = CURRENT_TIMESTAMP;
+        RETURN NEW;
+    END;
+    $$ language 'plpgsql';
+    
+    -- Create trigger to automatically update updated_at
+    CREATE TRIGGER update_todos_updated_at 
+        BEFORE UPDATE ON todos 
+        FOR EACH ROW 
+        EXECUTE FUNCTION update_updated_at_column();
+    
+    -- Verify the data was inserted correctly
+    DO $$
+    BEGIN
+        -- Check that all priorities are valid
+        IF EXISTS (
+            SELECT 1 FROM todos 
+            WHERE priority NOT IN ('LOW', 'MEDIUM', 'HIGH')
+        ) THEN
+            RAISE EXCEPTION 'Invalid priority values found in todos table';
+        END IF;
+        
+        -- Log successful initialization
+        RAISE NOTICE 'Todo database initialized successfully with % rows', (SELECT COUNT(*) FROM todos);
+    END $$;
