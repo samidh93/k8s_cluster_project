@@ -11,7 +11,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/samidh93/kubernetes.git
+    repoURL: https://github.com/samidh93/k8s_cluster_project.git
     targetRevision: HEAD
     path: helm/todo-app
     helm:
