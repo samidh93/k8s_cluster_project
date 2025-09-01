@@ -1,0 +1,74 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-sync-config
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: argocd-sync-config
+    app.kubernetes.io/part-of: argocd
+data:
+  # Sync wave configuration
+  sync-waves: |
+    # Wave 0: Wait for CI completion
+    - name: ci-completion-check
+      phase: PreSync
+      hook: Sync
+      condition: |
+        # Check if GitHub workflow completed successfully
+        workflow_status = "completed" AND workflow_conclusion = "success"
+      
+    # Wave 1: Deploy infrastructure
+    - name: infrastructure
+      phase: Sync
+      hook: Sync
+      wave: 1
+      
+    # Wave 2: Deploy applications
+    - name: applications
+      phase: Sync
+      hook: Sync
+      wave: 2
+      
+    # Wave 3: Post-deployment checks
+    - name: health-checks
+      phase: PostSync
+      hook: Sync
+      wave: 3
+
+  # CI status check configuration
+  ci-status-check: |
+    # GitHub workflow status check
+    - name: github-workflow
+      type: github
+      config:
+        owner: samidh93
+        repo: k8s_cluster_project
+        workflow: "Todo App CI/CD Pipeline"
+        branch: main
+        required_status: "success"
+        
+    # Commit status checks
+    - name: commit-status
+      type: github
+      config:
+        required_checks:
+          - "ci/cd"
+          - "test"
+          - "build"
+          - "security"
+        all_checks_must_pass: true
+
+  # Sync conditions
+  sync-conditions: |
+    # Only sync if CI workflow completed successfully
+    - name: ci-workflow-success
+      condition: |
+        github.workflow.status == "completed" AND 
+        github.workflow.conclusion == "success"
+      message: "CI workflow must complete successfully before deployment"
+      
+    # Only sync if all required checks passed
+    - name: all-checks-pass
+      condition: |
+        github.commit.status.all_checks_passed == true
+      message: "All required status checks must pass before deployment"

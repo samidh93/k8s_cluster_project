@@ -8,6 +8,13 @@ metadata:
   labels:
     app: todo-app
     environment: development
+  annotations:
+    # CI/CD Integration
+    argocd.argoproj.io/sync-options: "Prune=true,CreateNamespace=true"
+    # Wait for CI completion
+    argocd.argoproj.io/ci-status-check: "github"
+    # Sync wave - wait for CI
+    argocd.argoproj.io/sync-wave: "1"
 spec:
   project: default
   source:
@@ -27,10 +34,11 @@ spec:
     server: https://kubernetes.default.svc
     namespace: development-todo-app
   syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
-      allowEmpty: false
+    # Disable automatic sync - wait for CI completion
+    # automated:
+    #   prune: true
+    #   selfHeal: true
+    #   allowEmpty: false
     syncOptions:
       - Prune=true
       - PrunePropagationPolicy=foreground

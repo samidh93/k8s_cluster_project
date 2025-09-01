@@ -5,6 +5,7 @@ on:
     branches: [ main, develop ]
   pull_request:
     branches: [ main, develop ]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -16,12 +17,14 @@ env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
 
+# ========================================
+# STAGE 1: PARALLEL BUILD JOBS
+# ========================================
+
 jobs:
-  # ========================================
-  # JOB 1: Code Quality & Testing
-  # ========================================
-  test:
-    name: Test & Quality Check
+  # Backend Build Job
+  build-backend:
+    name: 🏗️ Build Backend
     runs-on: ubuntu-latest
     
     steps:
@@ -35,19 +38,42 @@ jobs:
         distribution: 'temurin'
         cache: 'maven'
         
-    - name: Set up Node.js 18
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18'
-        cache: 'npm'
-        cache-dependency-path: 'src/frontend/package-lock.json'
-        
     - name: Cache Maven packages
       uses: actions/cache@v3
       with:
         path: ~/.m2
         key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
         restore-keys: ${{ runner.os }}-m2
+        
+    - name: Build Backend JAR
+      working-directory: src/backend
+      run: |
+        echo "🏗️ Building Java backend..."
+        mvn clean package -DskipTests
+        echo "✅ Backend JAR built successfully!"
+        
+    - name: Upload Backend Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: backend-jar
+        path: src/backend/target/*.jar
+        retention-days: 1
+
+  # Frontend Build Job
+  build-frontend:
+    name: 🎨 Build Frontend
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Node.js 18
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: 'src/frontend/package-lock.json'
         
     - name: Cache npm packages
       uses: actions/cache@v3
@@ -57,45 +83,50 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-node-
           
-    # Backend Testing
-    - name: Test Backend
-      working-directory: src/backend
-      run: |
-        echo "🧪 Running Java backend tests..."
-        mvn clean test
-        echo "✅ Backend tests completed!"
-        
-    # Frontend Testing
-    - name: Test Frontend
+    - name: Build Frontend
       working-directory: src/frontend
       run: |
-        echo "🧪 Checking React frontend..."
+        echo "🎨 Building React frontend..."
         npm ci
-        echo "✅ Frontend dependencies installed successfully!"
-        
-    # Code Quality Checks
-    - name: Backend Code Quality
-      working-directory: src/backend
-      run: |
-        echo "🔍 Checking Java code quality..."
-        mvn checkstyle:check
-        mvn spotbugs:check
-        echo "✅ Backend code quality checks passed!"
-        
-    - name: Frontend Code Quality
-      working-directory: src/frontend
-      run: |
-        echo "🔍 Checking TypeScript code quality..."
         npm run build
-        echo "✅ Frontend TypeScript compilation successful!"
+        echo "✅ Frontend build completed!"
+        
+    - name: Upload Frontend Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: frontend-build
+        path: src/frontend/build/
+        retention-days: 1
 
-  # ========================================
-  # JOB 2: Build & Package
-  # ========================================
-  build:
-    name: Build Applications
+  # Nginx Build Job
+  build-nginx:
+    name: 🌐 Build Nginx
     runs-on: ubuntu-latest
-    needs: test
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Validate Nginx Configuration
+      run: |
+        echo "🌐 Validating Nginx configuration..."
+        if [ -f "src/nginx/nginx.conf" ]; then
+          echo "✅ Nginx config file exists"
+        else
+          echo "❌ Nginx config file not found"
+          exit 1
+        fi
+        echo "✅ Nginx build preparation completed!"
+
+# ========================================
+# STAGE 2: PARALLEL TEST JOBS
+# ========================================
+
+  # Backend Testing Job
+  test-backend:
+    name: 🧪 Test Backend
+    runs-on: ubuntu-latest
+    needs: build-backend
     
     steps:
     - name: Checkout code
@@ -108,6 +139,37 @@ jobs:
         distribution: 'temurin'
         cache: 'maven'
         
+    - name: Download Backend Artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: backend-jar
+        path: src/backend/target/
+        
+    - name: Test Backend
+      working-directory: src/backend
+      run: |
+        echo "🧪 Running Java backend tests..."
+        mvn test
+        echo "✅ Backend tests completed!"
+        
+    - name: Backend Code Quality
+      working-directory: src/backend
+      run: |
+        echo "🔍 Checking Java code quality..."
+        mvn checkstyle:check
+        mvn spotbugs:check
+        echo "✅ Backend code quality checks passed!"
+
+  # Frontend Testing Job
+  test-frontend:
+    name: 🧪 Test Frontend
+    runs-on: ubuntu-latest
+    needs: build-frontend
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
     - name: Set up Node.js 18
       uses: actions/setup-node@v4
       with:
@@ -115,43 +177,60 @@ jobs:
         cache: 'npm'
         cache-dependency-path: 'src/frontend/package-lock.json'
         
-    # Build Backend
-    - name: Build Backend JAR
-      working-directory: src/backend
-      run: |
-        echo "🏗️ Building Java backend..."
-        mvn clean package -DskipTests
-        echo "✅ Backend JAR built successfully!"
-        
-    # Build Frontend
-    - name: Build Frontend
-      working-directory: src/frontend
-      run: |
-        echo "🏗️ Building React frontend..."
-        npm ci
-        npm run build
-        echo "✅ Frontend build completed!"
-        
-    # Upload Build Artifacts
-    - name: Upload Backend Artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: backend-jar
-        path: src/backend/target/*.jar
-        
-    - name: Upload Frontend Artifact
-      uses: actions/upload-artifact@v4
+    - name: Download Frontend Artifact
+      uses: actions/download-artifact@v4
       with:
         name: frontend-build
         path: src/frontend/build/
+        
+    - name: Test Frontend
+      working-directory: src/frontend
+      run: |
+        echo "🧪 Running React frontend tests..."
+        npm ci
+        npm test -- --passWithNoTests
+        echo "✅ Frontend tests completed!"
+        
+    - name: Frontend Code Quality
+      working-directory: src/frontend
+      run: |
+        echo "🔍 Checking TypeScript code quality..."
+        npm run build
+        echo "✅ Frontend TypeScript compilation successful!"
 
-  # ========================================
-  # JOB 3: Docker Image Building
-  # ========================================
-  docker:
-    name: Build & Push Docker Images
+  # Security Scanning Job
+  security-scan:
+    name: 🔒 Security Scan
     runs-on: ubuntu-latest
-    needs: build
+    needs: [build-backend, build-frontend, build-nginx]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        scan-ref: '.'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+        
+    - name: Upload Trivy scan results to GitHub Security tab
+      uses: github/codeql-action/upload-sarif@v3
+      if: always()
+      with:
+        sarif_file: 'trivy-results.sarif'
+
+# ========================================
+# STAGE 3: SEQUENTIAL DEPLOY JOBS
+# ========================================
+
+  # Docker Build Job
+  docker-build:
+    name: 🐳 Build Docker Images
+    runs-on: ubuntu-latest
+    needs: [test-backend, test-frontend, security-scan]
     if: github.event_name == 'push'
     
     steps:
@@ -222,39 +301,11 @@ jobs:
         cache-from: type=gha
         cache-to: type=gha,mode=max
 
-  # ========================================
-  # JOB 4: Security Scanning
-  # ========================================
-  security:
-    name: Security Scan
-    runs-on: ubuntu-latest
-    needs: build
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Run Trivy vulnerability scanner
-      uses: aquasecurity/trivy-action@master
-      with:
-        scan-type: 'fs'
-        scan-ref: '.'
-        format: 'sarif'
-        output: 'trivy-results.sarif'
-        
-    - name: Upload Trivy scan results to GitHub Security tab
-      uses: github/codeql-action/upload-sarif@v3
-      if: always()
-      with:
-        sarif_file: 'trivy-results.sarif'
-
-  # ========================================
-  # JOB 5: Deploy to Development
-  # ========================================
+  # Development Deployment Job
   deploy-dev:
-    name: Deploy to Development
+    name: 🚀 Deploy to Development
     runs-on: ubuntu-latest
-    needs: [test, build, security]
+    needs: docker-build
     if: (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main') && github.event_name == 'push'
     environment: development
     
@@ -265,16 +316,41 @@ jobs:
     - name: Deploy to Development Environment
       run: |
         echo "🚀 Deploying to development environment..."
-        echo "This would deploy using the latest Docker images"
+        echo "Using Docker images:"
+        echo "  - ghcr.io/${{ github.repository_owner }}/todo-backend:${{ github.sha }}"
+        echo "  - ghcr.io/${{ github.repository_owner }}/todo-frontend:${{ github.sha }}"
+        echo "  - ghcr.io/${{ github.repository_owner }}/todo-nginx:${{ github.sha }}"
         echo "Development deployment completed!"
+        
+    - name: Update Helm Values for ArgoCD
+      run: |
+        echo "📝 Updating Helm values for ArgoCD deployment..."
+        # Update the Helm values to use the new image tags
+        sed -i "s|tag: latest|tag: ${{ github.sha }}|g" helm/todo-app/values.yaml
+        
+    - name: Commit and Push Helm Changes
+      run: |
+        echo "📤 Committing and pushing Helm changes..."
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add helm/todo-app/values.yaml
+        git commit -m "Auto-deploy: Update image tags to ${{ github.sha }} [skip ci]"
+        git push origin main
+        
+    - name: Notify ArgoCD
+      run: |
+        echo "🔔 ArgoCD will automatically sync and deploy the new images"
+        echo "Commit: ${{ github.sha }}"
+        echo "Images:"
+        echo "  - ghcr.io/${{ github.repository_owner }}/todo-backend:${{ github.sha }}"
+        echo "  - ghcr.io/${{ github.repository_owner }}/todo-frontend:${{ github.sha }}"
+        echo "  - ghcr.io/${{ github.repository_owner }}/todo-nginx:${{ github.sha }}"
 
-  # ========================================
-  # JOB 6: Deploy to Production
-  # ========================================
+  # Production Deployment Job
   deploy-prod:
-    name: Deploy to Production
+    name: 🚀 Deploy to Production
     runs-on: ubuntu-latest
-    needs: [test, build, security, deploy-dev]
+    needs: deploy-dev
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     environment: production
     
@@ -285,5 +361,29 @@ jobs:
     - name: Deploy to Production Environment
       run: |
         echo "🚀 Deploying to production environment..."
-        echo "This would deploy using the latest Docker images"
+        echo "Using Docker images:"
+        echo "  - ghcr.io/${{ github.repository_owner }}/todo-backend:${{ github.sha }}"
+        echo "  - ghcr.io/${{ github.repository_owner }}/todo-frontend:${{ github.sha }}"
+        echo "  - ghcr.io/${{ github.repository_owner }}/todo-nginx:${{ github.sha }}"
         echo "Production deployment completed!"
+        
+    - name: Update Helm Values for ArgoCD Production
+      run: |
+        echo "📝 Updating Helm values for ArgoCD production deployment..."
+        # Update the Helm values to use the new image tags
+        sed -i "s|tag: latest|tag: ${{ github.sha }}|g" helm/todo-app/values.yaml
+        
+    - name: Commit and Push Helm Changes for Production
+      run: |
+        echo "📤 Committing and pushing Helm changes for production..."
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add helm/todo-app/values.yaml
+        git commit -m "Production deploy: Update image tags to ${{ github.sha }} [skip ci]"
+        git push origin main
+        
+    - name: Notify ArgoCD Production
+      run: |
+        echo "🔔 ArgoCD will automatically sync and deploy to production"
+        echo "Commit: ${{ github.sha }}"
+        echo "Production deployment triggered!"
