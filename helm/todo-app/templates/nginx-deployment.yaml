@@ -1,0 +1,54 @@
+{{- if .Values.nginx.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "todo-app.name" . }}-nginx
+  namespace: {{ .Values.global.environment }}-todo-app
+  labels:
+    {{- include "todo-app.labels" . | nindent 4 }}
+    app: todo-nginx
+    component: nginx
+spec:
+  replicas: {{ .Values.app.replicas.nginx }}
+  selector:
+    matchLabels:
+      {{- include "todo-app.labels" . | nindent 6 }}
+      app: todo-nginx
+      component: nginx
+  template:
+    metadata:
+      labels:
+        {{- include "todo-app.labels" . | nindent 8 }}
+        app: todo-nginx
+        component: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: {{ include "todo-app.nginxImage" . }}
+        imagePullPolicy: {{ .Values.nginx.image.pullPolicy }}
+        ports:
+        - containerPort: 80
+          name: http
+        resources:
+          {{- toYaml .Values.nginx.resources | nindent 10 }}
+        {{- if .Values.nginx.livenessProbe }}
+        livenessProbe:
+          {{- toYaml .Values.nginx.livenessProbe | nindent 10 }}
+        {{- end }}
+        {{- if .Values.nginx.readinessProbe }}
+        readinessProbe:
+          {{- toYaml .Values.nginx.readinessProbe | nindent 10 }}
+        {{- end }}
+        volumeMounts:
+        - name: nginx-config
+          mountPath: /etc/nginx/nginx.conf
+          subPath: nginx.conf
+        - name: nginx-logs
+          mountPath: /var/log/nginx
+      volumes:
+      - name: nginx-config
+        configMap:
+          name: {{ include "todo-app.name" . }}-nginx-config
+      - name: nginx-logs
+        emptyDir: {}
+{{- end }}

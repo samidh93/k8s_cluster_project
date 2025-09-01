@@ -1,0 +1,49 @@
+{{- if .Values.frontend.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "todo-app.name" . }}-frontend
+  namespace: {{ .Values.global.environment }}-todo-app
+  labels:
+    {{- include "todo-app.labels" . | nindent 4 }}
+    app: todo-frontend
+    component: frontend
+spec:
+  replicas: {{ .Values.app.replicas.frontend }}
+  selector:
+    matchLabels:
+      {{- include "todo-app.labels" . | nindent 6 }}
+      app: todo-frontend
+      component: frontend
+  template:
+    metadata:
+      labels:
+        {{- include "todo-app.labels" . | nindent 8 }}
+        app: todo-frontend
+        component: frontend
+    spec:
+      containers:
+      - name: frontend
+        image: {{ include "todo-app.image" . }}
+        imagePullPolicy: {{ .Values.frontend.image.pullPolicy }}
+        ports:
+        - containerPort: 80
+          name: http
+        resources:
+          {{- toYaml .Values.frontend.resources | nindent 10 }}
+        {{- if .Values.frontend.livenessProbe }}
+        livenessProbe:
+          {{- toYaml .Values.frontend.livenessProbe | nindent 10 }}
+        {{- end }}
+        {{- if .Values.frontend.readinessProbe }}
+        readinessProbe:
+          {{- toYaml .Values.frontend.readinessProbe | nindent 10 }}
+        {{- end }}
+        env:
+        - name: REACT_APP_API_URL
+          value: "http://{{ include "todo-app.name" . }}-backend:8080"
+        - name: REACT_APP_ENVIRONMENT
+          value: {{ .Values.global.environment | quote }}
+        - name: REACT_APP_VERSION
+          value: {{ .Values.app.version | quote }}
+{{- end }}

@@ -1,0 +1,22 @@
+{{- if .Values.nginx.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "todo-app.name" . }}-nginx
+  namespace: {{ .Values.global.environment }}-todo-app
+  labels:
+    {{- include "todo-app.labels" . | nindent 4 }}
+    app: todo-nginx
+    component: nginx
+spec:
+  type: {{ .Values.nginx.service.type }}
+  ports:
+  - port: {{ .Values.nginx.service.port }}
+    targetPort: {{ .Values.nginx.service.targetPort }}
+    protocol: TCP
+    name: http
+  selector:
+    {{- include "todo-app.labels" . | nindent 4 }}
+    app: todo-nginx
+    component: nginx
+{{- end }}

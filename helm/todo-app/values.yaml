@@ -20,6 +20,7 @@ app:
 
 # Frontend configuration
 frontend:
+  enabled: true
   image:
     repository: samidh93/todo-frontend
     tag: latest
@@ -96,6 +97,7 @@ backend:
 
 # Nginx configuration
 nginx:
+  enabled: true
   image:
     repository: samidh93/todo-nginx
     tag: latest
