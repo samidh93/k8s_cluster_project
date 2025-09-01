@@ -110,7 +110,7 @@ jobs:
     - name: Validate Nginx Configuration
       run: |
         echo "🌐 Validating Nginx configuration..."
-        if [ -f "src/nginx/nginx.conf" ]; then
+        if [ -f "docker/nginx.conf" ]; then
           echo "✅ Nginx config file exists"
         else
           echo "❌ Nginx config file not found"
