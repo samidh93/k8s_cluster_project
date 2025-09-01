@@ -58,7 +58,7 @@ backend:
   enabled: true
   image:
     repository: samidh93/todo-backend
-    tag: latest
+    tag: v1.0.1
     pullPolicy: IfNotPresent
   service:
     type: ClusterIP
