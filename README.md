@@ -18,6 +18,7 @@ A modern Kubernetes project with best practices for deployment and management.
 ├── .github/                # GitHub Actions (CI/CD)
 ├── Makefile                # Build/deployment commands
 └── README.md               # Project documentation
+
 ```
 
 ## Quick Start
