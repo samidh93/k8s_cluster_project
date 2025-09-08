@@ -1,6 +1,7 @@
 name: 🚀 GitOps Deployment Pipeline
 
 on:
+  # Manual trigger (for emergency deployments)
   workflow_dispatch:
     inputs:
       environment:
@@ -16,12 +17,16 @@ on:
         required: false
         default: false
         type: boolean
+  
+  # Automatic trigger from CI/CD pipeline
+  repository_dispatch:
+    types: [ci-cd-success]
 
 jobs:
   deploy:
-    name: 🚀 Trigger ArgoCD Sync for ${{ inputs.environment }}
+    name: 🚀 Trigger ArgoCD Sync
     runs-on: ubuntu-latest
-    environment: ${{ inputs.environment }}
+    environment: ${{ github.event.inputs.environment || 'development' }}
     
     steps:
     - name: Checkout code
@@ -29,34 +34,65 @@ jobs:
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
       
+    - name: Set deployment context
+      id: context
+      run: |
+        # Determine if this is manual or automatic trigger
+        if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+          echo "TRIGGER_TYPE=manual" >> $GITHUB_OUTPUT
+          echo "ENVIRONMENT=${{ github.event.inputs.environment }}" >> $GITHUB_OUTPUT
+          echo "COMMIT_SHA=${{ github.sha }}" >> $GITHUB_OUTPUT
+          echo "TRIGGERED_BY=${{ github.actor }}" >> $GITHUB_OUTPUT
+        else
+          echo "TRIGGER_TYPE=automatic" >> $GITHUB_OUTPUT
+          echo "ENVIRONMENT=${{ github.event.client_payload.environment }}" >> $GITHUB_OUTPUT
+          echo "COMMIT_SHA=${{ github.event.client_payload.commit_sha }}" >> $GITHUB_OUTPUT
+          echo "TRIGGERED_BY=${{ github.event.client_payload.triggered_by }}" >> $GITHUB_OUTPUT
+        fi
+        
+        echo "🎯 Deployment Context:"
+        echo "  Trigger Type: ${{ steps.context.outputs.TRIGGER_TYPE }}"
+        echo "  Environment: ${{ steps.context.outputs.ENVIRONMENT }}"
+        echo "  Commit SHA: ${{ steps.context.outputs.COMMIT_SHA }}"
+        echo "  Triggered By: ${{ steps.context.outputs.TRIGGERED_BY }}"
+      
     - name: Verify CI/CD Pipeline Completion
       run: |
         echo "🔍 Verifying CI/CD pipeline has completed successfully..."
-        echo "✅ Assuming CI/CD pipeline has built and pushed latest images"
-        echo "📦 Images should be available with 'latest' tags:"
-        echo "  - ghcr.io/${{ github.repository_owner }}/todo-backend:latest"
-        echo "  - ghcr.io/${{ github.repository_owner }}/todo-frontend:latest"
-        echo "  - ghcr.io/${{ github.repository_owner }}/todo-nginx:latest"
+        if [ "${{ steps.context.outputs.TRIGGER_TYPE }}" == "automatic" ]; then
+          echo "✅ CI/CD pipeline completed successfully (automatic trigger)"
+          echo "📦 Images built and pushed with 'latest' tags:"
+          echo "  - ghcr.io/${{ github.repository_owner }}/todo-backend:latest"
+          echo "  - ghcr.io/${{ github.repository_owner }}/todo-frontend:latest"
+          echo "  - ghcr.io/${{ github.repository_owner }}/todo-nginx:latest"
+        else
+          echo "⚠️  Manual deployment - assuming latest images are available"
+          echo "📦 Expected images with 'latest' tags:"
+          echo "  - ghcr.io/${{ github.repository_owner }}/todo-backend:latest"
+          echo "  - ghcr.io/${{ github.repository_owner }}/todo-frontend:latest"
+          echo "  - ghcr.io/${{ github.repository_owner }}/todo-nginx:latest"
+        fi
         
     - name: Trigger ArgoCD Sync
       run: |
-        echo "🔄 Triggering ArgoCD sync for ${{ inputs.environment }} environment..."
+        echo "🔄 Triggering ArgoCD sync for ${{ steps.context.outputs.ENVIRONMENT }} environment..."
         
         # Since ArgoCD is running locally, we'll use a different approach
         # We'll create a "sync trigger" by updating a dummy file that ArgoCD watches
         
         echo "📝 Creating sync trigger file..."
         echo "# Sync Trigger - $(date)" > sync-trigger.txt
-        echo "Environment: ${{ inputs.environment }}" >> sync-trigger.txt
-        echo "Triggered by: ${{ github.actor }}" >> sync-trigger.txt
-        echo "Commit: ${{ github.sha }}" >> sync-trigger.txt
+        echo "Environment: ${{ steps.context.outputs.ENVIRONMENT }}" >> sync-trigger.txt
+        echo "Trigger Type: ${{ steps.context.outputs.TRIGGER_TYPE }}" >> sync-trigger.txt
+        echo "Triggered by: ${{ steps.context.outputs.TRIGGERED_BY }}" >> sync-trigger.txt
+        echo "Commit: ${{ steps.context.outputs.COMMIT_SHA }}" >> sync-trigger.txt
         echo "Timestamp: $(date -u +%Y-%m-%dT%H:%M:%SZ)" >> sync-trigger.txt
         
         # Add and commit the sync trigger
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
         git add sync-trigger.txt
-        git commit -m "🚀 Trigger ArgoCD sync for ${{ inputs.environment }} [skip ci]"
+        git commit -m "🚀 Trigger ArgoCD sync for ${{ steps.context.outputs.ENVIRONMENT }} (${{ steps.context.outputs.TRIGGER_TYPE }}) [skip ci]"
         
         echo "📤 Pushing sync trigger to repository..."
         git push origin main
@@ -81,12 +117,12 @@ jobs:
       run: |
         echo "📊 GitOps Deployment Summary:"
         echo "============================"
-        echo "✅ Environment: ${{ inputs.environment }}"
-        echo "✅ Trigger: Manual deployment"
+        echo "✅ Environment: ${{ steps.context.outputs.ENVIRONMENT }}"
+        echo "✅ Trigger: ${{ steps.context.outputs.TRIGGER_TYPE }} deployment"
         echo "✅ Images: Using 'latest' tags (no Git changes)"
         echo "✅ ArgoCD: Sync triggered"
-        echo "✅ Commit: ${{ github.sha }}"
-        echo "✅ Triggered by: ${{ github.actor }}"
+        echo "✅ Commit: ${{ steps.context.outputs.COMMIT_SHA }}"
+        echo "✅ Triggered by: ${{ steps.context.outputs.TRIGGERED_BY }}"
         echo "============================"
         echo ""
         echo "🎯 Next Steps:"

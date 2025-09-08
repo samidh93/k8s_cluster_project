@@ -338,3 +338,43 @@ jobs:
         cache-from: type=gha
         cache-to: type=gha,mode=max
 
+  # Auto-deploy job - triggers deploy pipeline after successful CI/CD
+  auto-deploy:
+    name: 🚀 Trigger Auto-Deploy
+    runs-on: ubuntu-latest
+    needs: [docker-build-backend, docker-build-frontend, docker-build-nginx]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Trigger Deploy Pipeline
+      uses: peter-evans/repository-dispatch@v3
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        event-type: ci-cd-success
+        client-payload: |
+          {
+            "environment": "development",
+            "commit_sha": "${{ github.sha }}",
+            "triggered_by": "ci-cd-pipeline",
+            "images": {
+              "backend": "ghcr.io/${{ github.repository_owner }}/todo-backend:latest",
+              "frontend": "ghcr.io/${{ github.repository_owner }}/todo-frontend:latest",
+              "nginx": "ghcr.io/${{ github.repository_owner }}/todo-nginx:latest"
+            }
+          }
+    
+    - name: Deploy Pipeline Triggered
+      run: |
+        echo "🎉 CI/CD Pipeline completed successfully!"
+        echo "🚀 Deploy pipeline has been triggered automatically"
+        echo "📦 Images built and pushed:"
+        echo "  - ghcr.io/${{ github.repository_owner }}/todo-backend:latest"
+        echo "  - ghcr.io/${{ github.repository_owner }}/todo-frontend:latest"
+        echo "  - ghcr.io/${{ github.repository_owner }}/todo-nginx:latest"
+        echo "🔔 ArgoCD will sync automatically after deploy pipeline runs"
+
