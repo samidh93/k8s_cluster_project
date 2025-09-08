@@ -1,0 +1,51 @@
+name: Test GitHub Actions Permissions
+
+on:
+  workflow_dispatch:  # Manual trigger only
+  push:
+    branches: [ main ]
+    paths:
+      - 'test-permissions.txt'  # Only trigger when this file changes
+
+jobs:
+  test-permissions:
+    name: 🔐 Test Write Permissions
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: Test File Creation
+      run: |
+        echo "🧪 Testing GitHub Actions write permissions..."
+        echo "Current timestamp: $(date)" > test-permissions.txt
+        echo "✅ Test file created successfully!"
+        
+    - name: Test Git Add
+      run: |
+        echo "📝 Testing git add..."
+        git add test-permissions.txt
+        echo "✅ Git add successful!"
+        
+    - name: Test Git Commit
+      run: |
+        echo "💾 Testing git commit..."
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git commit -m "Test: Verify GitHub Actions write permissions [skip ci]"
+        echo "✅ Git commit successful!"
+        
+    - name: Test Git Push
+      run: |
+        echo "📤 Testing git push..."
+        git push origin main
+        echo "✅ Git push successful!"
+        
+    - name: Success Message
+      run: |
+        echo "🎉 All permission tests passed!"
+        echo "GitHub Actions has write access to the repository"
+        echo "The main CI/CD workflow should work correctly now"
