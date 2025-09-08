@@ -23,7 +23,7 @@ frontend:
   enabled: true
   image:
     repository: samidh93/todo-frontend
-    tag: latest
+    tag: 743f616
     pullPolicy: IfNotPresent
   service:
     type: ClusterIP
@@ -58,7 +58,7 @@ backend:
   enabled: true
   image:
     repository: samidh93/todo-backend
-    tag: latest
+    tag: 743f616
     pullPolicy: IfNotPresent
   service:
     type: ClusterIP
@@ -100,7 +100,7 @@ nginx:
   enabled: true
   image:
     repository: samidh93/todo-nginx
-    tag: latest
+    tag: 743f616
     pullPolicy: IfNotPresent
   service:
     type: ClusterIP
