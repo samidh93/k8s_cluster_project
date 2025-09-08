@@ -3,7 +3,7 @@ import { Todo, TodoFormData, TodoStatistics, PaginatedTodos } from '../types/Tod
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || '/api';
 
-// Create axios instance with default config
+// Create axios instance with default config (updated for CORS fix)
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
   headers: {

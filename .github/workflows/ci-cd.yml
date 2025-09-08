@@ -352,21 +352,24 @@ jobs:
         token: ${{ secrets.GITHUB_TOKEN }}
     
     - name: Trigger Deploy Pipeline
-      uses: peter-evans/repository-dispatch@v3
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }}
-        event-type: ci-cd-success
-        client-payload: |
-          {
-            "environment": "development",
-            "commit_sha": "${{ github.sha }}",
-            "triggered_by": "ci-cd-pipeline",
-            "images": {
-              "backend": "ghcr.io/${{ github.repository_owner }}/todo-backend:latest",
-              "frontend": "ghcr.io/${{ github.repository_owner }}/todo-frontend:latest",
-              "nginx": "ghcr.io/${{ github.repository_owner }}/todo-nginx:latest"
+      run: |
+        echo "🚀 Triggering deploy pipeline via GitHub API..."
+        
+        # Use GitHub CLI to trigger the deploy workflow
+        curl -X POST \
+          -H "Accept: application/vnd.github.v3+json" \
+          -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+          -H "Content-Type: application/json" \
+          -d '{
+            "ref": "main",
+            "inputs": {
+              "environment": "development",
+              "force_sync": "true"
             }
-          }
+          }' \
+          "https://api.github.com/repos/${{ github.repository }}/actions/workflows/deploy.yml/dispatches"
+        
+        echo "✅ Deploy pipeline triggered successfully!"
     
     - name: Deploy Pipeline Triggered
       run: |

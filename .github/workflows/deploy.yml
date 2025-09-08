@@ -18,9 +18,8 @@ on:
         default: false
         type: boolean
   
-  # Automatic trigger from CI/CD pipeline
-  repository_dispatch:
-    types: [ci-cd-success]
+  # Automatic trigger from CI/CD pipeline (via workflow_dispatch API)
+  # The CI/CD pipeline will trigger this workflow using the GitHub API
 
 jobs:
   deploy:
@@ -38,16 +37,17 @@ jobs:
       id: context
       run: |
         # Determine if this is manual or automatic trigger
-        if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+        # Check if force_sync is true (indicates automatic trigger from CI/CD)
+        if [ "${{ github.event.inputs.force_sync }}" == "true" ]; then
+          echo "TRIGGER_TYPE=automatic" >> $GITHUB_OUTPUT
+          echo "ENVIRONMENT=${{ github.event.inputs.environment }}" >> $GITHUB_OUTPUT
+          echo "COMMIT_SHA=${{ github.sha }}" >> $GITHUB_OUTPUT
+          echo "TRIGGERED_BY=ci-cd-pipeline" >> $GITHUB_OUTPUT
+        else
           echo "TRIGGER_TYPE=manual" >> $GITHUB_OUTPUT
           echo "ENVIRONMENT=${{ github.event.inputs.environment }}" >> $GITHUB_OUTPUT
           echo "COMMIT_SHA=${{ github.sha }}" >> $GITHUB_OUTPUT
           echo "TRIGGERED_BY=${{ github.actor }}" >> $GITHUB_OUTPUT
-        else
-          echo "TRIGGER_TYPE=automatic" >> $GITHUB_OUTPUT
-          echo "ENVIRONMENT=${{ github.event.client_payload.environment }}" >> $GITHUB_OUTPUT
-          echo "COMMIT_SHA=${{ github.event.client_payload.commit_sha }}" >> $GITHUB_OUTPUT
-          echo "TRIGGERED_BY=${{ github.event.client_payload.triggered_by }}" >> $GITHUB_OUTPUT
         fi
         
         echo "🎯 Deployment Context:"
