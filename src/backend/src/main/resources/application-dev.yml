@@ -103,6 +103,9 @@ app:
       - http://localhost:3000
       - http://localhost:80
       - http://localhost
+      - http://localhost:8080
+      - http://todo.local
+      - "*"
     allowed-methods: GET,POST,PUT,DELETE,PATCH,OPTIONS
     allowed-headers: "*"
     allow-credentials: true
