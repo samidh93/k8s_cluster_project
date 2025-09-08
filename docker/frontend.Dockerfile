@@ -1,20 +1,11 @@
-# Use Node.js runtime for serving React app
-FROM node:18-alpine
-
-# Set working directory
-WORKDIR /app
-
-# Copy package files
-COPY src/frontend/package*.json ./
-
-# Install dependencies
-RUN npm ci --only=production
+# Use lightweight nginx for serving React app
+FROM nginx:alpine
 
 # Copy pre-built frontend
-COPY src/frontend/build ./build
+COPY src/frontend/build /usr/share/nginx/html
 
-# Install serve package for production serving
-RUN npm install -g serve
+# Copy nginx configuration for React Router
+COPY docker/nginx-frontend.conf /etc/nginx/conf.d/default.conf
 
 # Expose port
 EXPOSE 80
@@ -23,5 +14,5 @@ EXPOSE 80
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:80/ || exit 1
 
-# Start the React app
-CMD ["serve", "-s", "build", "-l", "80"]
+# Start nginx
+CMD ["nginx", "-g", "daemon off;"]
