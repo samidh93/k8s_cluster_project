@@ -1,0 +1,105 @@
+name: 🚀 Manual Deployment Pipeline
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'development'
+        type: choice
+        options:
+        - development
+        - production
+      image_tag:
+        description: 'Docker image tag to deploy (leave empty for latest)'
+        required: false
+        type: string
+      commit_message:
+        description: 'Custom commit message for deployment'
+        required: false
+        type: string
+        default: 'Manual deployment'
+
+jobs:
+  deploy:
+    name: 🚀 Deploy to ${{ inputs.environment }}
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+      
+    - name: Set deployment variables
+      run: |
+        echo "🎯 Deployment Configuration:"
+        echo "Environment: ${{ inputs.environment }}"
+        echo "Image Tag: ${IMAGE_TAG:-latest}"
+        echo "Commit Message: ${{ inputs.commit_message }}"
+        
+        # Set image tag - use input if provided, otherwise use latest
+        if [ -n "${{ inputs.image_tag }}" ]; then
+          echo "IMAGE_TAG=${{ inputs.image_tag }}" >> $GITHUB_ENV
+        else
+          echo "IMAGE_TAG=latest" >> $GITHUB_ENV
+        fi
+        
+        # Set commit message
+        echo "COMMIT_MSG=${{ inputs.commit_message }}" >> $GITHUB_ENV
+      
+    - name: Deploy to ${{ inputs.environment }}
+      run: |
+        echo "🚀 Deploying to ${{ inputs.environment }} environment..."
+        echo "Using Docker images:"
+        echo "  - ghcr.io/${{ github.repository_owner }}/todo-backend:${{ env.IMAGE_TAG }}"
+        echo "  - ghcr.io/${{ github.repository_owner }}/todo-frontend:${{ env.IMAGE_TAG }}"
+        echo "  - ghcr.io/${{ github.repository_owner }}/todo-nginx:${{ env.IMAGE_TAG }}"
+        echo "${{ inputs.environment }} deployment completed!"
+        
+    - name: Update Helm Values for ArgoCD
+      run: |
+        echo "📝 Updating Helm values for ArgoCD ${{ inputs.environment }} deployment..."
+        # Update the Helm values to use the specified image tag
+        sed -i "s|tag: latest|tag: ${{ env.IMAGE_TAG }}|g" helm/todo-app/values.yaml
+        sed -i "s|tag: [a-f0-9]\{40\}|tag: ${{ env.IMAGE_TAG }}|g" helm/todo-app/values.yaml
+        
+        echo "✅ Helm values updated with tag: ${{ env.IMAGE_TAG }}"
+        
+    - name: Commit and Push Helm Changes
+      run: |
+        echo "📤 Committing and pushing Helm changes..."
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add helm/todo-app/values.yaml
+        
+        # Create commit message
+        COMMIT_MSG="${{ env.COMMIT_MSG }}: Update image tags to ${{ env.IMAGE_TAG }} [skip ci]"
+        git commit -m "$COMMIT_MSG"
+        
+        echo "📤 Pushing changes to repository..."
+        git push origin main
+        
+    - name: Notify ArgoCD
+      run: |
+        echo "🔔 ArgoCD will automatically sync and deploy the new images"
+        echo "Environment: ${{ inputs.environment }}"
+        echo "Image Tag: ${{ env.IMAGE_TAG }}"
+        echo "Images:"
+        echo "  - ghcr.io/${{ github.repository_owner }}/todo-backend:${{ env.IMAGE_TAG }}"
+        echo "  - ghcr.io/${{ github.repository_owner }}/todo-frontend:${{ env.IMAGE_TAG }}"
+        echo "  - ghcr.io/${{ github.repository_owner }}/todo-nginx:${{ env.IMAGE_TAG }}"
+        echo "✅ Deployment triggered successfully!"
+        
+    - name: Deployment Summary
+      run: |
+        echo "📊 Deployment Summary:"
+        echo "===================="
+        echo "✅ Environment: ${{ inputs.environment }}"
+        echo "✅ Image Tag: ${{ env.IMAGE_TAG }}"
+        echo "✅ Commit: ${{ github.sha }}"
+        echo "✅ Triggered by: ${{ github.actor }}"
+        echo "✅ ArgoCD will sync automatically"
+        echo "===================="
