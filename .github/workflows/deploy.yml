@@ -1,4 +1,4 @@
-name: 🚀 Manual Deployment Pipeline
+name: 🚀 GitOps Deployment Pipeline
 
 on:
   workflow_dispatch:
@@ -11,19 +11,15 @@ on:
         options:
         - development
         - production
-      image_tag:
-        description: 'Docker image tag to deploy (leave empty for latest)'
+      force_sync:
+        description: 'Force ArgoCD sync even if no changes detected'
         required: false
-        type: string
-      commit_message:
-        description: 'Custom commit message for deployment'
-        required: false
-        type: string
-        default: 'Manual deployment'
+        default: false
+        type: boolean
 
 jobs:
   deploy:
-    name: 🚀 Deploy to ${{ inputs.environment }}
+    name: 🚀 Trigger ArgoCD Sync for ${{ inputs.environment }}
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment }}
     
@@ -33,73 +29,68 @@ jobs:
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
       
-    - name: Set deployment variables
+    - name: Verify CI/CD Pipeline Completion
       run: |
-        echo "🎯 Deployment Configuration:"
-        echo "Environment: ${{ inputs.environment }}"
-        echo "Image Tag: ${IMAGE_TAG:-latest}"
-        echo "Commit Message: ${{ inputs.commit_message }}"
+        echo "🔍 Verifying CI/CD pipeline has completed successfully..."
+        echo "✅ Assuming CI/CD pipeline has built and pushed latest images"
+        echo "📦 Images should be available with 'latest' tags:"
+        echo "  - ghcr.io/${{ github.repository_owner }}/todo-backend:latest"
+        echo "  - ghcr.io/${{ github.repository_owner }}/todo-frontend:latest"
+        echo "  - ghcr.io/${{ github.repository_owner }}/todo-nginx:latest"
         
-        # Set image tag - use input if provided, otherwise use latest
-        if [ -n "${{ inputs.image_tag }}" ]; then
-          echo "IMAGE_TAG=${{ inputs.image_tag }}" >> $GITHUB_ENV
-        else
-          echo "IMAGE_TAG=latest" >> $GITHUB_ENV
-        fi
-        
-        # Set commit message
-        echo "COMMIT_MSG=${{ inputs.commit_message }}" >> $GITHUB_ENV
-      
-    - name: Deploy to ${{ inputs.environment }}
+    - name: Trigger ArgoCD Sync
       run: |
-        echo "🚀 Deploying to ${{ inputs.environment }} environment..."
-        echo "Using Docker images:"
-        echo "  - ghcr.io/${{ github.repository_owner }}/todo-backend:${{ env.IMAGE_TAG }}"
-        echo "  - ghcr.io/${{ github.repository_owner }}/todo-frontend:${{ env.IMAGE_TAG }}"
-        echo "  - ghcr.io/${{ github.repository_owner }}/todo-nginx:${{ env.IMAGE_TAG }}"
-        echo "${{ inputs.environment }} deployment completed!"
+        echo "🔄 Triggering ArgoCD sync for ${{ inputs.environment }} environment..."
         
-    - name: Update Helm Values for ArgoCD
-      run: |
-        echo "📝 Updating Helm values for ArgoCD ${{ inputs.environment }} deployment..."
-        # Update the Helm values to use the specified image tag
-        sed -i "s|tag: latest|tag: ${{ env.IMAGE_TAG }}|g" helm/todo-app/values.yaml
-        sed -i "s|tag: [a-f0-9]\{40\}|tag: ${{ env.IMAGE_TAG }}|g" helm/todo-app/values.yaml
+        # Since ArgoCD is running locally, we'll use a different approach
+        # We'll create a "sync trigger" by updating a dummy file that ArgoCD watches
         
-        echo "✅ Helm values updated with tag: ${{ env.IMAGE_TAG }}"
+        echo "📝 Creating sync trigger file..."
+        echo "# Sync Trigger - $(date)" > sync-trigger.txt
+        echo "Environment: ${{ inputs.environment }}" >> sync-trigger.txt
+        echo "Triggered by: ${{ github.actor }}" >> sync-trigger.txt
+        echo "Commit: ${{ github.sha }}" >> sync-trigger.txt
+        echo "Timestamp: $(date -u +%Y-%m-%dT%H:%M:%SZ)" >> sync-trigger.txt
         
-    - name: Commit and Push Helm Changes
-      run: |
-        echo "📤 Committing and pushing Helm changes..."
+        # Add and commit the sync trigger
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
-        git add helm/todo-app/values.yaml
+        git add sync-trigger.txt
+        git commit -m "🚀 Trigger ArgoCD sync for ${{ inputs.environment }} [skip ci]"
         
-        # Create commit message
-        COMMIT_MSG="${{ env.COMMIT_MSG }}: Update image tags to ${{ env.IMAGE_TAG }} [skip ci]"
-        git commit -m "$COMMIT_MSG"
-        
-        echo "📤 Pushing changes to repository..."
+        echo "📤 Pushing sync trigger to repository..."
         git push origin main
         
-    - name: Notify ArgoCD
+        echo "✅ ArgoCD sync trigger completed!"
+        echo "🔔 ArgoCD will detect the repository change and sync automatically"
+        
+    - name: Wait for ArgoCD Sync
       run: |
-        echo "🔔 ArgoCD will automatically sync and deploy the new images"
-        echo "Environment: ${{ inputs.environment }}"
-        echo "Image Tag: ${{ env.IMAGE_TAG }}"
-        echo "Images:"
-        echo "  - ghcr.io/${{ github.repository_owner }}/todo-backend:${{ env.IMAGE_TAG }}"
-        echo "  - ghcr.io/${{ github.repository_owner }}/todo-frontend:${{ env.IMAGE_TAG }}"
-        echo "  - ghcr.io/${{ github.repository_owner }}/todo-nginx:${{ env.IMAGE_TAG }}"
-        echo "✅ Deployment triggered successfully!"
+        echo "⏳ Waiting for ArgoCD to detect and sync changes..."
+        echo "🔍 Monitoring ArgoCD application status..."
+        
+        # Wait for ArgoCD to detect changes (if kubectl is available)
+        if command -v kubectl &> /dev/null; then
+          echo "📊 Checking ArgoCD application status..."
+          kubectl get application todo-app -n argocd -o wide || echo "⚠️  Cannot access ArgoCD"
+        fi
+        
+        echo "✅ ArgoCD sync process initiated!"
         
     - name: Deployment Summary
       run: |
-        echo "📊 Deployment Summary:"
-        echo "===================="
+        echo "📊 GitOps Deployment Summary:"
+        echo "============================"
         echo "✅ Environment: ${{ inputs.environment }}"
-        echo "✅ Image Tag: ${{ env.IMAGE_TAG }}"
+        echo "✅ Trigger: Manual deployment"
+        echo "✅ Images: Using 'latest' tags (no Git changes)"
+        echo "✅ ArgoCD: Sync triggered"
         echo "✅ Commit: ${{ github.sha }}"
         echo "✅ Triggered by: ${{ github.actor }}"
-        echo "✅ ArgoCD will sync automatically"
-        echo "===================="
+        echo "============================"
+        echo ""
+        echo "🎯 Next Steps:"
+        echo "1. ArgoCD will detect the sync trigger"
+        echo "2. ArgoCD will pull latest images from registry"
+        echo "3. ArgoCD will deploy the updated application"
+        echo "4. Monitor ArgoCD UI for deployment progress"

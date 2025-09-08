@@ -34,11 +34,11 @@ spec:
     server: https://kubernetes.default.svc
     namespace: development-todo-app
   syncPolicy:
-    # Disable automatic sync - wait for CI completion
-    # automated:
-    #   prune: true
-    #   selfHeal: true
-    #   allowEmpty: false
+    # Enable automatic sync - ArgoCD will sync when webhook is triggered
+    automated:
+      prune: true
+      selfHeal: true
+      allowEmpty: false
     syncOptions:
       - Prune=true
       - PrunePropagationPolicy=foreground
