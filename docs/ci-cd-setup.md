@@ -6,14 +6,20 @@ This document explains how to set up and configure the CI/CD pipeline for the To
 
 ## 📋 Pipeline Stages
 
-The CI/CD pipeline consists of 6 main jobs:
+The CI/CD pipeline consists of parallel build jobs with automated deployment:
 
-1. **Test & Quality Check** - Runs tests and code quality checks
-2. **Build Applications** - Builds Java backend and React frontend
-3. **Docker Image Building** - Creates and pushes Docker images
-4. **Security Scanning** - Runs vulnerability scans
-5. **Deploy to Development** - Deploys to dev environment
-6. **Deploy to Production** - Deploys to production environment
+### 🏗️ Build Stage (Parallel)
+1. **Backend Build** - Java compilation, testing, JAR creation
+2. **Frontend Build** - React compilation, TypeScript checking
+3. **Docker Build** - Multi-stage container builds for all services
+
+### 🚀 Deploy Stage
+4. **Auto-Deploy** - Triggers ArgoCD sync for GitOps deployment
+
+### 🔄 GitOps Integration
+- **ArgoCD Sync** - Automated deployment via GitOps
+- **Image Tagging** - Latest images with commit SHA tags
+- **Health Checks** - Deployment validation and rollback
 
 ## 🔐 Required GitHub Secrets
 

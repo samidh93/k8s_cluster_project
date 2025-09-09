@@ -22,6 +22,11 @@ help:
 	@echo "  deploy-staging - Deploy to staging environment"
 	@echo "  deploy-prod    - Deploy to production environment"
 	@echo ""
+	@echo "Access & Monitoring:"
+	@echo "  port-forward   - Set up port forwarding for local access"
+	@echo "  monitor        - Access Prometheus and Grafana"
+	@echo "  argocd         - Access ArgoCD interface"
+	@echo ""
 	@echo "Maintenance:"
 	@echo "  clean          - Clean up all resources"
 	@echo "  status         - Show cluster status"
@@ -83,21 +88,52 @@ docker-status:
 
 # Development deployment
 deploy-dev: build-all
-	kubectl apply -k k8s/overlays/development/
+	@echo "Deploying to development environment..."
+	helm install todo-app ./helm/todo-app --namespace development-todo-app --create-namespace --set global.environment=development
+	@echo "Development deployment complete!"
 
 # Staging deployment
 deploy-staging:
-	kubectl apply -k k8s/overlays/staging/
+	@echo "Deploying to staging environment..."
+	helm install todo-app ./helm/todo-app --namespace staging-todo-app --create-namespace --set global.environment=staging
+	@echo "Staging deployment complete!"
 
 # Production deployment
 deploy-prod:
-	kubectl apply -k k8s/overlays/production/
+	@echo "Deploying to production environment..."
+	helm install todo-app ./helm/todo-app --namespace production-todo-app --create-namespace --set global.environment=production
+	@echo "Production deployment complete!"
 
 # Clean up all resources
 clean:
 	@echo "Cleaning up all environments..."
-	kubectl delete namespace app --ignore-not-found=true || true
+	kubectl delete namespace development-todo-app --ignore-not-found=true || true
+	kubectl delete namespace staging-todo-app --ignore-not-found=true || true
+	kubectl delete namespace production-todo-app --ignore-not-found=true || true
+	kubectl delete namespace monitoring --ignore-not-found=true || true
+	kubectl delete namespace argocd --ignore-not-found=true || true
 	@echo "Cleanup completed"
+
+# Port forwarding for local access
+port-forward:
+	@echo "Setting up port forwarding..."
+	@echo "Frontend: http://localhost:3000"
+	@echo "API: http://localhost:3000/api"
+	kubectl port-forward -n development-todo-app service/todo-app-nginx 3000:80 &
+
+# Access monitoring tools
+monitor:
+	@echo "Accessing monitoring tools..."
+	@echo "Prometheus: http://localhost:9090"
+	@echo "Grafana: http://localhost:3001"
+	kubectl port-forward -n monitoring service/prometheus 9090:9090 &
+	kubectl port-forward -n monitoring service/grafana 3001:3000 &
+
+# Access ArgoCD
+argocd:
+	@echo "Accessing ArgoCD..."
+	@echo "ArgoCD: https://localhost:8080"
+	kubectl port-forward -n argocd service/argocd-server 8080:443 &
 
 # Show cluster status
 status:

@@ -2,7 +2,7 @@
 
 ## 🏗️ Project Overview
 
-This is a full-stack Todo application built with modern technologies and deployed on Kubernetes.
+This is a comprehensive full-stack Todo application built with modern cloud-native technologies and deployed on Kubernetes with GitOps workflows. The application demonstrates production-ready patterns including microservices architecture, containerization, CI/CD automation, and observability monitoring.
 
 ## 🛠️ Technology Stack
 
