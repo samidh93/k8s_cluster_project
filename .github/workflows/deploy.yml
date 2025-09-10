@@ -1,4 +1,4 @@
-name: 🚀 GitOps Deployment Pipeline
+name: 🚀 KubeTodoApp GitOps Deployment Pipeline
 
 on:
   # Manual trigger (for emergency deployments)

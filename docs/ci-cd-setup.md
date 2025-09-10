@@ -1,8 +1,8 @@
-# CI/CD Pipeline Setup Guide
+# KubeTodoApp CI/CD Pipeline Setup Guide
 
 ## 🚀 Overview
 
-This document explains how to set up and configure the CI/CD pipeline for the Todo application.
+This document explains how to set up and configure the CI/CD pipeline for **KubeTodoApp**.
 
 ## 📋 Pipeline Stages
 

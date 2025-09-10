@@ -1,13 +1,13 @@
-# 🚀 Todo Application - Kubernetes & GitOps Project
+# 🚀 KubeTodoApp - Kubernetes & GitOps Project
 
-![CI/CD Pipeline](https://github.com/samidh93/k8s_cluster_project/workflows/Todo%20App%20CI/CD%20Pipeline/badge.svg)
+![CI/CD Pipeline](https://github.com/samidh93/kubetodoapp/workflows/Todo%20App%20CI/CD%20Pipeline/badge.svg)
 ![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat&logo=docker&logoColor=white)
 ![Kubernetes](https://img.shields.io/badge/Kubernetes-326CE5?style=flat&logo=kubernetes&logoColor=white)
 ![ArgoCD](https://img.shields.io/badge/ArgoCD-EF7B4D?style=flat&logo=argo&logoColor=white)
 ![React](https://img.shields.io/badge/React-61DAFB?style=flat&logo=react&logoColor=black)
 ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-6DB33F?style=flat&logo=spring&logoColor=white)
 
-A comprehensive **full-stack Todo application** built with modern cloud-native technologies, featuring **GitOps deployment**, **CI/CD automation**, and **observability monitoring**. This project demonstrates production-ready Kubernetes deployment patterns, containerization best practices, and automated infrastructure management.
+**KubeTodoApp** is a comprehensive **full-stack Todo application** built with modern cloud-native technologies, featuring **GitOps deployment**, **CI/CD automation**, and **observability monitoring**. This project demonstrates production-ready Kubernetes deployment patterns, containerization best practices, and automated infrastructure management.
 
 ## 📋 Table of Contents
 
@@ -27,7 +27,7 @@ A comprehensive **full-stack Todo application** built with modern cloud-native t
 
 ## 🎯 Project Overview
 
-This project showcases a **production-ready Todo application** deployed on Kubernetes with the following key capabilities:
+**KubeTodoApp** showcases a **production-ready Todo application** deployed on Kubernetes with the following key capabilities:
 
 - **Full-Stack Application**: React frontend + Spring Boot backend + PostgreSQL database
 - **Container Orchestration**: Kubernetes with Helm charts for deployment management
@@ -172,8 +172,8 @@ The application follows a **microservices architecture** with clear separation o
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/samidh93/k8s_cluster_project.git
-   cd k8s_cluster_project
+   git clone https://github.com/samidh93/kubetodoapp.git
+   cd kubetodoapp
    ```
 
 2. **Start local Kubernetes cluster**
@@ -337,7 +337,7 @@ The project uses a sophisticated CI/CD pipeline with the following stages:
 
 ### Pipeline Status
 
-![CI/CD Pipeline](https://github.com/samidh93/k8s_cluster_project/workflows/Todo%20App%20CI/CD%20Pipeline/badge.svg)
+![CI/CD Pipeline](https://github.com/samidh93/kubetodoapp/workflows/Todo%20App%20CI/CD%20Pipeline/badge.svg)
 
 ## 📁 Project Structure
 

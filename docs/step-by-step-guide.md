@@ -1,6 +1,6 @@
-# 🚀 Step-by-Step Project Guide
+# 🚀 KubeTodoApp - Step-by-Step Project Guide
 
-This comprehensive guide will walk you through setting up, deploying, and managing the Todo Application project from start to finish.
+This comprehensive guide will walk you through setting up, deploying, and managing the **KubeTodoApp** project from start to finish.
 
 ## 📋 Prerequisites Checklist
 
@@ -19,8 +19,8 @@ Before starting, ensure you have the following installed:
 
 ### 1.1 Clone the Repository
 ```bash
-git clone https://github.com/samidh93/k8s_cluster_project.git
-cd k8s_cluster_project
+git clone https://github.com/samidh93/kubetodoapp.git
+cd kubetodoapp
 ```
 
 ### 1.2 Verify Project Structure
