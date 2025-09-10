@@ -10,9 +10,9 @@ keywords:
   - spring-boot
   - postgresql
   - kubernetes
-home: https://github.com/samidh93/kubernetes
+home: https://github.com/samidh93/kubetodoapp
 sources:
-  - https://github.com/samidh93/kubernetes
+  - https://github.com/samidh93/kubetodoapp
 maintainers:
   - name: Sami
     email: sami@example.com

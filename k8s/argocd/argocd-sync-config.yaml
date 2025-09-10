@@ -42,8 +42,8 @@ data:
       type: github
       config:
         owner: samidh93
-        repo: k8s_cluster_project
-        workflow: "Todo App CI/CD Pipeline"
+        repo: kubetodoapp
+        workflow: "KubeTodoApp CI/CD Pipeline"
         branch: main
         required_status: "success"
         

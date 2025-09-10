@@ -20,7 +20,7 @@ data:
         - workflow_run
       repositories:
         - owner: "samidh93"
-          name: "k8s_cluster_project"
+          name: "kubetodoapp"
           branch: "main"
           path: "helm/todo-app"
     
